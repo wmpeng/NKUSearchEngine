@@ -9,6 +9,7 @@ class MyRedisUtil:
     port = int(Config.get("redis.port"))
     pool = redis.ConnectionPool(host=host, port=port, decode_responses=True)
     r = redis.Redis(connection_pool=pool)
+    default_interval = float(Config.get("redis.default_interval"))
 
     @classmethod
     def _set(cls, name: str, key: str, value: str):
@@ -69,7 +70,7 @@ class MyRedisUtil:
 
     @classmethod
     def first_time(cls, md5: str):
-        interval = Config.default_interval()
+        interval = cls.default_interval
         cls._visit(md5, interval)
 
     @classmethod
@@ -78,8 +79,6 @@ class MyRedisUtil:
         curr_ts = time.time()
         return ts is None or curr_ts >= ts
 
-
-my_redis_util = MyRedisUtil()
 
 if __name__ == "__main__":
     print("begin")

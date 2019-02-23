@@ -1,3 +1,4 @@
+import codecs
 import hashlib
 import json
 import os
@@ -14,17 +15,17 @@ class Config:
                 json_str = f.read()
                 cls.conf_dict = json.loads(json_str)
 
-    @classmethod
-    def doc_path(cls) -> str:
-        return cls.conf_dict["path.document"]
-
-    @classmethod
-    def page_path(cls) -> str:
-        return cls.conf_dict["path.page"]
-
-    @classmethod
-    def default_interval(cls) -> float:
-        return float(cls.conf_dict["redis.default_interval"])
+    # @classmethod
+    # def doc_path(cls) -> str:
+    #     return cls.conf_dict["path.document"]
+    #
+    # @classmethod
+    # def page_path(cls) -> str:
+    #     return cls.conf_dict["path.page"]
+    #
+    # @classmethod
+    # def default_interval(cls) -> float:
+    #     return float(cls.conf_dict["redis.default_interval"])
 
     @classmethod
     def get(cls, key: str) -> str:
@@ -46,3 +47,15 @@ class MyUtil:
         for path_name, path in Config.conf_dict.items():
             if path_name.startswith("path.") and not os.path.exists(path):
                 os.makedirs(path)
+
+    @staticmethod
+    def write_data(data: bytes, path: str):
+        f = codecs.open(path, 'wb')
+        f.write(data)
+        f.close()
+
+    @staticmethod
+    def write_str(text: str, path: str):
+        f = open(path, "w", encoding="UTF-8")
+        f.write(text)
+        f.close()

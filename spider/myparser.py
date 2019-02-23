@@ -4,10 +4,6 @@ from html.parser import HTMLParser
 from typing import List
 
 
-class A:
-    print("A")
-
-
 class MyHTMLParser(HTMLParser):
     def __init__(self, curr_url: str):
         super().__init__()

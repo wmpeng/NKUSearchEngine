@@ -1,69 +1,63 @@
-import codecs
 import http.client
+import re
 import urllib.parse
 import urllib.request
 from queue import Queue
 from typing import Set
 
-from mytool import Config, MyUtil
 from myparser import MyHTMLParser
-from redis_access import my_redis_util
+from mytool import Config, MyUtil
 
 
 class Spider:
+    valid_rul = Config.get("spider.valid_url")
+    invalid_file_type = Config.get("spider.invalid_file_type")
+    page_path = Config.get("path.page")
+    doc_path = Config.get("spider.path.document")
+
     def __init__(self):
         self.bfs_queue = Queue()
-        self.visited_url: Set[str] = set()
+        self.visited: Set[str] = set()
         MyUtil.create_folders()
 
-    @staticmethod
-    def url_validation(url: str) -> bool:
-        return url is not None
+    @classmethod
+    def url_validation(cls, url: str) -> bool:
+        return url is not None and re.search(cls.valid_rul, url)
 
-    @staticmethod
-    def file_type_validation(url: str) -> bool:
-        return url.split(".")[-1] != "mp4"
+    @classmethod
+    def file_type_validation(cls, url: str) -> bool:
+        return bool(re.search(cls.invalid_file_type, url.split(".")[-1]))
 
-    @staticmethod
-    def write_data(data: bytes, path: str):
-        f = codecs.open(path, 'wb')
-        f.write(data)
-        f.close()
-
-    @staticmethod
-    def write_str(text: str, path: str):
-        f = open(path, "w", encoding="UTF-8")
-        f.write(text)
-        f.close()
-
-    def write_response(self, response: http.client.HTTPResponse):
+    @classmethod
+    def write_page(cls, response: http.client.HTTPResponse) -> bytes:
         data = response.read()
-        path = Config.page_path() + MyUtil.md5(response.geturl()) + ".html"
-        self.write_data(data, path)
+        path = cls.page_path + MyUtil.md5(response.geturl()) + ".html"
+        MyUtil.write_data(data, path)
+        return data
+
+    @classmethod
+    def write_doc(cls, text: str, url: str):
+        path = cls.doc_path + MyUtil.md5(url) + ".txt"
+        MyUtil.write_str(text, path)
 
     def search(self, url: str):
-        self.visited_url.add(url)
-        if not self.url_validation(url):
-            return
+        self.visited.add(url)
 
         response: http.client.HTTPResponse = urllib.request.urlopen(url)
         content_type = response.getheader('Content-Type')
         charset = content_type.split("charset=")[-1]
-        if "text/html" in content_type:
-            data = response.read()
-            path = Config.page_path() + MyUtil.md5(response.geturl()) + ".html"
-            self.write_data(data, path)
+        if "text/html" in content_type:  # html
+            data = self.write_page(response)
 
             parser = MyHTMLParser(url)
             parser.feed(data.decode(charset, 'ignore'))
             for new_url in parser.new_urls:
-                if new_url not in self.visited_url:
+                if new_url not in self.visited and self.url_validation(new_url):
                     self.bfs_queue.put(new_url)
-            path = Config.doc_path() + MyUtil.md5(response.geturl()) + ".txt"
-            self.write_str(parser.text, path)
-        else:
+            self.write_doc(parser.text, url)
+        else:  # other file
             if self.file_type_validation(url):
-                self.write_response(response)
+                self.write_page(response)
 
     def run(self, start_url: str, max_doc_num: int = 2 ** 20):
         self.bfs_queue.put(start_url)
@@ -81,7 +75,6 @@ if __name__ == "__main__":
     begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://343241324.nankai.edu.cn/"
     spider.run(begin_url, 1)
-    print("\n".join(spider.visited_url))
+    print("\n".join(spider.visited))
     print("end")
     # print(Config.doc_path())
-    my_redis_util
