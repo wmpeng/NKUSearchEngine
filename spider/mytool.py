@@ -16,13 +16,19 @@ class Config:
 
     @classmethod
     def doc_path(cls) -> str:
-        cls.read_json()
         return cls.conf_dict["path.document"]
 
     @classmethod
     def page_path(cls) -> str:
-        cls.read_json()
         return cls.conf_dict["path.page"]
+
+    @classmethod
+    def default_interval(cls) -> float:
+        return float(cls.conf_dict["redis.default_interval"])
+
+    @classmethod
+    def get(cls, key: str) -> str:
+        return cls.conf_dict.get(key)
 
 
 Config.read_json()

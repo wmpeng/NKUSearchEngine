@@ -1,4 +1,9 @@
 {
     "path.document" : "../documents/",
-    "path.page" : "../pages/"
+    "path.page" : "../pages/",
+
+    "spider.valid_url" : "(.*\\.nankai\\.edu\\.cn.*)",
+    "redis.default_interval": "86400",
+    "redis.host": "123.207.141.211",
+    "redis.port": "6379"
 }

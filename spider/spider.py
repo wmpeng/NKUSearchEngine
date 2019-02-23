@@ -7,6 +7,7 @@ from typing import Set
 
 from mytool import Config, MyUtil
 from myparser import MyHTMLParser
+from redis_access import my_redis_util
 
 
 class Spider:
@@ -76,6 +77,11 @@ class Spider:
 if __name__ == "__main__":
     print("begin")
     spider = Spider()
-    spider.run("http://www.nankai.edu.cn/", 5)
+    # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
+    begin_url = "http://www.nankai.edu.cn/"
+    # begin_url = "http://343241324.nankai.edu.cn/"
+    spider.run(begin_url, 1)
+    print("\n".join(spider.visited_url))
     print("end")
     # print(Config.doc_path())
+    my_redis_util

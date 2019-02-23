@@ -15,9 +15,9 @@ class MyHTMLParser(HTMLParser):
         self.new_urls: List[str] = []
         self.text: str = ""
 
-    @staticmethod
-    def href_validation(value):
-        return value not in ["", "#"] and value is not None
+    # @staticmethod
+    # def href_validation(value):
+    #     return value not in ["", "#"] and value is not None
 
     @staticmethod
     def content_tag_validation(tag: str):
