@@ -169,6 +169,15 @@ class MyRedisUtil:
         cls._redis.flushall()
 
     @classmethod
+    def flush(cls):
+        cls._del("url")
+        cls._del("visited")
+        cls._del("interval")
+        cls._del("next_time")
+        cls._del("snap_visited")
+        cls._del("snap_queue")
+
+    @classmethod
     def store_visited(cls, val: Set[str]):
         cls._del("snap_visited")
         if len(val) != 0:
@@ -191,6 +200,10 @@ class MyRedisUtil:
         q = queue.Queue()
         q.queue = queue.deque(val)
         return q
+
+    @classmethod
+    def stored_breakpoint(cls) -> bool:
+        return bool(cls.get_visited())
 
 
 if __name__ == "__main__":

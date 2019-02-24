@@ -106,7 +106,15 @@ class Spider:
             print("[exception]", type(error), error)
             traceback.print_exc()
 
-    def new_job(self, max_doc_num):
+    def new_job(self):
+        MyRedisUtil.flush()
+        self.bfs_queue.put(Config.get("job.start_url"))
+
+    def resume_batch(self):
+        self.bfs_queue = MyRedisUtil.get_queue()
+        self.visited = MyRedisUtil.get_visited()
+
+    def new_batch(self):
         all_urls = MyRedisUtil.get_all_urls()
         if all_urls:
             for url in all_urls:
@@ -114,17 +122,15 @@ class Spider:
         else:
             self.bfs_queue.put(Config.get("job.start_url"))
 
-        for doc_cnt in range(max_doc_num):
-            print("count", doc_cnt, "queue_size", self.bfs_queue.qsize())
-            if self.bfs_queue.empty():
-                break
-            curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
-            print(time.time(), "searching", curr_url)
-            self.search(curr_url)
+    def run(self, mode: str, max_doc_num: int = 2 ** 20):
+        assert (mode in ["new_job", "resume", "new_batch"])
 
-    def resume_job(self, max_doc_num):
-        self.bfs_queue = MyRedisUtil.get_queue()
-        self.visited = MyRedisUtil.get_visited()
+        if mode == "new_job":
+            self.new_job()
+        elif mode == "resume" and MyRedisUtil.stored_breakpoint():
+            self.resume_batch()
+        else:
+            self.new_batch()
 
         for doc_cnt in range(max_doc_num):
             print("count", doc_cnt, "queue_size", self.bfs_queue.qsize())
@@ -134,8 +140,6 @@ class Spider:
             print(time.time(), "searching", curr_url)
             self.search(curr_url)
 
-    def run(self, max_doc_num: int = 2 ** 20):
-        self.resume_job(max_doc_num)
         MyRedisUtil.store_visited(self.visited)
         MyRedisUtil.store_queue(self.bfs_queue)
 
@@ -146,5 +150,7 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run(10)
+    spider.run("new_job", 1000)
+    # spider.run("new_batch", 10)
+    # spider.run("resume", 10)
     print("end")
