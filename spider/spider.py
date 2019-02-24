@@ -102,9 +102,7 @@ class Spider:
             print("count", doc_cnt)
             if self.bfs_queue.empty():
                 break
-            curr_url: str = self.bfs_queue.get()
-            if curr_url.endswith("/"):
-                curr_url = curr_url[:-1]
+            curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
             print(time.time(), "searching", curr_url)
             self.search(curr_url)
 

@@ -15,19 +15,19 @@ class MyRedisUtil:
     _default_interval = float(Config.get("job.default_interval"))
     _min_interval = float(Config.get("job.min_interval"))
     _max_interval = float(Config.get("job.max_interval"))
-    _start_md5 = MyUtil.md5(Config.get("job.start_url"))
+    _start_md5 = MyUtil.md5(MyUtil.normalize_url(Config.get("job.start_url")))
 
     @classmethod
     def _set(cls, name: str, key: str, val: str):
-        cls._redis.hset(cls._start_md5 + name, key, val)
+        cls._redis.hset(cls._start_md5 + "_" + name, key, val)
 
     @classmethod
     def _get(cls, name: str, key: str) -> str:
-        return cls._redis.hget(cls._start_md5 + name, key)
+        return cls._redis.hget(cls._start_md5 + "_" + name, key)
 
     @classmethod
     def _hvals(cls, name: str):
-        return cls._redis.hvals(cls._start_md5 + name)
+        return cls._redis.hvals(cls._start_md5 + "_" + name)
 
     @classmethod
     def _set_url(cls, md5: str, url: str):

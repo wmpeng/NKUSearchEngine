@@ -76,6 +76,13 @@ class MyUtil:
     def diff_ratio(str1: str, str2: str) -> float:
         return difflib.SequenceMatcher(None, str1, str2).ratio()
 
+    @staticmethod
+    def normalize_url(url: str) -> str:
+        if url.endswith("/"):
+            return url[:-1]
+        else:
+            return url
+
 
 def print_info(fn):
     def print_name(*args):

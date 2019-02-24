@@ -11,5 +11,5 @@
     "job.default_interval": "86400",
     "job.min_interval": "3600",
     "job.max_interval": "8640000",
-    "job.start_url": "http://www.nankai.edu.cn/"
+    "job.start_url": "http://www.nankai.edu.cn"
 }
