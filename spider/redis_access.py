@@ -12,26 +12,30 @@ class MyRedisUtil:
     _port = int(Config.get("redis.port"))
     _pool = redis.ConnectionPool(host=_host, port=_port, decode_responses=True)
     _redis = redis.Redis(connection_pool=_pool)
-    _default_interval = float(Config.get("spider.default_interval"))
-    _min_interval = float(Config.get("spider.min_interval"))
-    _max_interval = float(Config.get("spider.max_interval"))
-
+    _default_interval = float(Config.get("job.default_interval"))
+    _min_interval = float(Config.get("job.min_interval"))
+    _max_interval = float(Config.get("job.max_interval"))
+    _start_md5 = MyUtil.md5(Config.get("job.start_url"))
 
     @classmethod
-    def _set(cls, name: str, key: str, value: str):
-        cls._redis.hset(name, key, value)
+    def _set(cls, name: str, key: str, val: str):
+        cls._redis.hset(cls._start_md5 + name, key, val)
 
     @classmethod
     def _get(cls, name: str, key: str) -> str:
-        return cls._redis.hget(name, key)
+        return cls._redis.hget(cls._start_md5 + name, key)
+
+    @classmethod
+    def _hvals(cls, name: str):
+        return cls._redis.hvals(cls._start_md5 + name)
 
     @classmethod
     def _set_url(cls, md5: str, url: str):
-        cls._set("md5_url", md5, url)
+        cls._set("url", md5, url)
 
     @classmethod
     def _get_url(cls, md5: str):
-        cls._get("md5_url", md5)
+        cls._get("url", md5)
 
     @classmethod
     def _set_visited(cls, md5: str, ts: float):
@@ -122,16 +126,13 @@ class MyRedisUtil:
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
 
-        print("md5", md5)
-        print("visited", cls._get_visited(md5))
         ts = cls._get_next_time(md5)
-        print("ts", ts)
         curr_ts = time.time()
         return ts is None or curr_ts >= ts
 
     @classmethod
     def get_all_urls(cls) -> List[str]:
-        all_urls = cls._redis.hvals("md5_url")
+        all_urls = cls._hvals("url")
         if all_urls is None:
             return []
         else:
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     # print(MyRedisUtil._get("hash1", "a3"))
     # MyRedisUtil.flush_all()
     # print(MyRedisUtil._get("hash1", "a3"))
-    # print(MyRedisUtil._redis.hvals("md5_url"))
+    # print(MyRedisUtil._redis._hvals("md5_url"))
     MyRedisUtil.flush_all()
 
     print("end")

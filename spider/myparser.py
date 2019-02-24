@@ -12,8 +12,8 @@ class MyHTMLParser(HTMLParser):
         self.text: str = ""
 
     # @staticmethod
-    # def href_validation(value):
-    #     return value not in ["", "#"] and value is not None
+    # def href_validation(val):
+    #     return val not in ["", "#"] and val is not None
 
     @staticmethod
     def content_tag_validation(tag: str):

@@ -4,9 +4,12 @@
 
     "spider.valid_url" : "(.*nankai\\.edu\\.cn.*)|(202\\.113\\..*)|(222\\.30\\..*)|(.*baidu\\.com.*)",
     "spider.invalid_file_type" : "mp4|",
-    "spider.default_interval": "86400",
-    "spider.min_interval": "3600",
-    "spider.max_interval": "8640000",
+
     "redis.host": "123.207.141.211",
-    "redis.port": "18888"
+    "redis.port": "18888",
+
+    "job.default_interval": "86400",
+    "job.min_interval": "3600",
+    "job.max_interval": "8640000",
+    "job.start_url": "http://www.nankai.edu.cn/"
 }

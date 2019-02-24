@@ -32,6 +32,10 @@ class Config:
     def get(cls, key: str) -> str:
         return cls.conf_dict.get(key)
 
+    @classmethod
+    def set(cls, key: str, val: str):
+        cls.conf_dict[key] = val
+
 
 Config.read_json()
 

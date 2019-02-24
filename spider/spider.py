@@ -79,7 +79,6 @@ class Spider:
             self.write_data(response)
 
     def search(self, url: str):
-        print("searching", time.time(), url)
         self.visited.add(url)
         if not MyRedisUtil.need_search(url):
             return
@@ -91,16 +90,22 @@ class Spider:
         else:  # other file
             self.process_file(response, url)
 
-    def run(self, start_url: str, max_doc_num: int = 2 ** 20):
+    def run(self, max_doc_num: int = 2 ** 20):
         all_urls = MyRedisUtil.get_all_urls()
-        for url in all_urls:
-            self.bfs_queue.put(url)
-        self.bfs_queue.put(start_url)
+        if all_urls:
+            for url in all_urls:
+                self.bfs_queue.put(url)
+        else:
+            self.bfs_queue.put(Config.get("job.start_url"))
+
         for doc_cnt in range(max_doc_num):
             print("count", doc_cnt)
             if self.bfs_queue.empty():
                 break
-            curr_url = self.bfs_queue.get()
+            curr_url: str = self.bfs_queue.get()
+            if curr_url.endswith("/"):
+                curr_url = curr_url[:-1]
+            print(time.time(), "searching", curr_url)
             self.search(curr_url)
 
 
@@ -110,8 +115,7 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    begin_url = "http://www.baidu.com/"
-    spider.run(begin_url, 5)
+    spider.run(5)
     # print("\n".join(spider.visited))
     print("end")
     # print(Config.doc_path())
