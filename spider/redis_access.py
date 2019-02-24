@@ -1,4 +1,5 @@
-from typing import Union, List
+import queue
+from typing import Union, List, Set
 
 import redis
 import time
@@ -26,8 +27,20 @@ class MyRedisUtil:
         return cls._redis.hget(cls._start_md5 + "_" + name, key)
 
     @classmethod
-    def _hvals(cls, name: str):
+    def _del(cls, name: str):
+        cls._redis.delete(cls._start_md5 + "_" + name)
+
+    @classmethod
+    def _hvals(cls, name: str) -> List[str]:
         return cls._redis.hvals(cls._start_md5 + "_" + name)
+
+    @classmethod
+    def _push_list(cls, name, val: List[str]):
+        cls._redis.rpush(cls._start_md5 + "_" + name, *val)
+
+    @classmethod
+    def _get_list(cls, name) -> List[str]:
+        return cls._redis.lrange(cls._start_md5 + "_" + name, 0, -1)
 
     @classmethod
     def _set_url(cls, md5: str, url: str):
@@ -155,6 +168,30 @@ class MyRedisUtil:
     def flush_all(cls):
         cls._redis.flushall()
 
+    @classmethod
+    def store_visited(cls, val: Set[str]):
+        cls._del("snap_visited")
+        if len(val) != 0:
+            cls._push_list("snap_visited", list(val))
+
+    @classmethod
+    def get_visited(cls) -> Set[str]:
+        return set(cls._get_list("snap_visited"))
+
+    @classmethod
+    def store_queue(cls, q: queue.Queue):
+        val = list(q.queue)
+        cls._del("snap_queue")
+        if len(val) != 0:
+            cls._push_list("snap_queue", val)
+
+    @classmethod
+    def get_queue(cls) -> queue.Queue:
+        val = cls._get_list("snap_queue")
+        q = queue.Queue()
+        q.queue = queue.deque(val)
+        return q
+
 
 if __name__ == "__main__":
     print("begin")
@@ -163,6 +200,12 @@ if __name__ == "__main__":
     # pool = redis.ConnectionPool(host=host, port=18888,
     #                             decode_responses=True)  # host是redis主机，需要redis服务端和客户端都起着 redis默认端口是6379
     # r = redis.Redis(connection_pool=pool)
+    # r.rpush("list1", *["1", "2", "3", "4", "5"])
+    # print(r.lindex("list1", 0))
+    # print(list(r.lrange("list1", 0, -1)))
+    #
+    # r.delete("list1")
+
     # r.set('gender', 'male')  # key是"gender" value是"male" 将键值对存入redis缓存
     # print(r.get('gender'))  # gender 取出键male对应的值
 
@@ -176,6 +219,10 @@ if __name__ == "__main__":
     # MyRedisUtil.flush_all()
     # print(MyRedisUtil._get("hash1", "a3"))
     # print(MyRedisUtil._redis._hvals("md5_url"))
-    MyRedisUtil.flush_all()
+
+    # MyRedisUtil.store_list("list1", ["aa", "bb", "c"])
+    # MyRedisUtil.get_list("list1")
+
+    # MyRedisUtil.flush_all()
 
     print("end")
