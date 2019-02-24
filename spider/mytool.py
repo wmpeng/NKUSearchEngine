@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 from typing import Dict
+import difflib
 
 
 class Config:
@@ -59,3 +60,24 @@ class MyUtil:
         f = open(path, "w", encoding="UTF-8")
         f.write(text)
         f.close()
+
+    @staticmethod
+    def read_str(path) -> str:
+        f = open(path, "r", encoding="UTF-8")
+        ret = f.read()
+        f.close()
+        return ret
+
+    @staticmethod
+    def diff_ratio(str1: str, str2: str) -> float:
+        return difflib.SequenceMatcher(None, str1, str2).ratio()
+
+
+def print_info(fn):
+    def print_name(*args):
+        print("[fn_name]", fn.__name__)
+        result = fn(*args)
+        print("[fn_return]", result)
+        return result
+
+    return print_name

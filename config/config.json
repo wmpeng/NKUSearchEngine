@@ -2,9 +2,11 @@
     "path.document" : "../documents/",
     "path.page" : "../pages/",
 
-    "spider.valid_url" : "(.*\\.nankai\\.edu\\.cn.*)",
+    "spider.valid_url" : "(.*nankai\\.edu\\.cn.*)|(202\\.113\\..*)|(222\\.30\\..*)|(.*baidu\\.com.*)",
     "spider.invalid_file_type" : "mp4|",
-    "redis.default_interval": "86400",
+    "spider.default_interval": "86400",
+    "spider.min_interval": "3600",
+    "spider.max_interval": "8640000",
     "redis.host": "123.207.141.211",
-    "redis.port": "6379"
+    "redis.port": "18888"
 }
