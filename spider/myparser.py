@@ -21,7 +21,8 @@ class MyHTMLParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag == 'a':  # link
-            attrs = {attr[0]: attr[1].strip() for attr in attrs}
+            # attr[1] is None in some conditions
+            attrs = {attr[0]: str(attr[1]).strip() for attr in attrs}
             if "href" in attrs:
                 new_url = urllib.parse.urljoin(self.curr_url, attrs.get("href"))
                 self.new_urls.append(new_url)

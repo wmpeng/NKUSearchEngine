@@ -68,10 +68,12 @@ class MyRedisUtil:
     @classmethod
     def _get_interval(cls, md5: str) -> Union[float, None]:
         val = cls._get("interval", md5)
-        if val is None:
-            return val
-        else:
-            return float(val)
+        assert val is not None
+        return float(val)
+
+    @classmethod
+    def _set_exception(cls, md5: str, exception_info: str):
+        cls._set("exception", md5, exception_info)
 
     @classmethod
     def _visit(cls, md5: str, interval: float):
@@ -81,7 +83,7 @@ class MyRedisUtil:
         cls._set_next_time(md5, ts + interval)
 
     @classmethod
-    @print_info
+    # @print_info
     def is_visited(cls, url: str):
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
@@ -89,39 +91,43 @@ class MyRedisUtil:
         return bool(cls._get_visited(md5))
 
     @classmethod
-    @print_info
+    # @print_info
     def changed(cls, url: str):
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
 
         interval = cls._get_interval(md5)
-        assert interval is not None
         interval = max(cls._min_interval, interval / 2)
         cls._visit(md5, interval)
 
     @classmethod
-    @print_info
+    # @print_info
     def unchanged(cls, url: str):
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
 
         interval = cls._get_interval(md5)
-        assert interval is not None
         interval = min(cls._max_interval, interval * 2)
         cls._visit(md5, interval)
 
     @classmethod
-    @print_info
+    # @print_info
     def first_time(cls, url: str):
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
 
         interval = cls._default_interval
-        assert interval is not None
         cls._visit(md5, interval)
 
     @classmethod
-    @print_info
+    def exceptional(cls, url: str):
+        if cls.is_visited(url):
+            cls.unchanged(url)
+        else:
+            cls.first_time(url)
+
+    @classmethod
+    # @print_info
     def need_search(cls, url: str) -> bool:
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
@@ -137,6 +143,13 @@ class MyRedisUtil:
             return []
         else:
             return all_urls
+
+    @classmethod
+    def set_exception(cls, url: str, error: BaseException):
+        md5 = MyUtil.md5(url)
+        cls._set_url(md5, url)
+
+        cls._set_exception(md5, str(type(error)) + str(error))
 
     @classmethod
     def flush_all(cls):

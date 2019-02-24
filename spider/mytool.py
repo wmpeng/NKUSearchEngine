@@ -30,7 +30,9 @@ class Config:
 
     @classmethod
     def get(cls, key: str) -> str:
-        return cls.conf_dict.get(key)
+        val = cls.conf_dict.get(key)
+        assert val is not None
+        return val
 
     @classmethod
     def set(cls, key: str, val: str):
@@ -38,6 +40,7 @@ class Config:
 
 
 Config.read_json()
+Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
 
 
 class MyUtil:

@@ -2,8 +2,10 @@ import http.client
 import os
 import re
 import time
+import traceback
 import urllib.parse
 import urllib.request
+import urllib.error
 from queue import Queue
 from typing import Set
 
@@ -78,17 +80,31 @@ class Spider:
         if self.file_type_validation(url):
             self.write_data(response)
 
-    def search(self, url: str):
-        self.visited.add(url)
-        if not MyRedisUtil.need_search(url):
-            return
-
+    def process_one_url(self, url: str):
         response: http.client.HTTPResponse = urllib.request.urlopen(url)
         content_type = response.getheader('Content-Type')
         if "text/html" in content_type:  # html
             self.process_html(response, url)
         else:  # other file
             self.process_file(response, url)
+
+    def search(self, url: str):
+        self.visited.add(url)
+        if not MyRedisUtil.need_search(url):
+            return
+
+        try:
+            self.process_one_url(url)
+        except urllib.error.HTTPError as error:
+            MyRedisUtil.set_exception(url, error)
+        except urllib.error.URLError as error:
+            MyRedisUtil.set_exception(url, error)
+        except ConnectionResetError as error:
+            MyRedisUtil.set_exception(url, error)
+        except BaseException as error:
+            MyRedisUtil.set_exception(url, error)
+            print("[exception]", type(error), error)
+            traceback.print_exc()
 
     def run(self, max_doc_num: int = 2 ** 20):
         all_urls = MyRedisUtil.get_all_urls()
@@ -99,7 +115,7 @@ class Spider:
             self.bfs_queue.put(Config.get("job.start_url"))
 
         for doc_cnt in range(max_doc_num):
-            print("count", doc_cnt)
+            print("count", doc_cnt, "queue_size", self.bfs_queue.qsize())
             if self.bfs_queue.empty():
                 break
             curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
@@ -113,7 +129,5 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run(5)
-    # print("\n".join(spider.visited))
+    spider.run(100)
     print("end")
-    # print(Config.doc_path())
