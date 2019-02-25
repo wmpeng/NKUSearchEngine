@@ -40,7 +40,9 @@ class Config:
 
 
 Config.read_json()
-Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
+# Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
+# Config.conf_dict["job.start_url"] = "http://xxgk.nankai.edu.cn/_redirect?siteId=55&columnId=2769&articleId=105109"
+Config.conf_dict["job.start_url"] = "http://cc.nankai.edu.cn"
 
 
 class MyUtil:

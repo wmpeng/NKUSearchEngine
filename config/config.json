@@ -3,7 +3,7 @@
     "path.page" : "../pages/",
 
     "spider.valid_url" : "(.*nankai\\.edu\\.cn.*)|(202\\.113\\..*)|(222\\.30\\..*)",
-    "spider.invalid_file_type" : "mp4|",
+    "spider.invalid_file_type" : "mp4",
 
     "redis.host": "123.207.141.211",
     "redis.port": "18888",

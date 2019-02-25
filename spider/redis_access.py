@@ -85,8 +85,8 @@ class MyRedisUtil:
         return float(val)
 
     @classmethod
-    def _set_exception(cls, md5: str, exception_info: str):
-        cls._set("exception", md5, exception_info)
+    def _set_exception(cls, md5: str, prefix: str, exception_info: str):
+        cls._set(prefix + "exception", md5, exception_info)
 
     @classmethod
     def _visit(cls, md5: str, interval: float):
@@ -158,11 +158,18 @@ class MyRedisUtil:
             return all_urls
 
     @classmethod
-    def set_exception(cls, url: str, error: BaseException):
+    def set_known_exception(cls, url: str, error: BaseException):
         md5 = MyUtil.md5(url)
         cls._set_url(md5, url)
 
-        cls._set_exception(md5, str(type(error)) + str(error))
+        cls._set_exception(md5, "known", str(type(error)) + "  " + str(error))
+
+    @classmethod
+    def set_unknown_exception(cls, url: str, error: BaseException):
+        md5 = MyUtil.md5(url)
+        cls._set_url(md5, url)
+
+        cls._set_exception(md5, "unknown", str(type(error)) + "  " + str(error))
 
     @classmethod
     def flush_all(cls):

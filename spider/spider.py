@@ -1,11 +1,13 @@
 import http.client
 import os
 import re
+import string
 import time
 import traceback
 import urllib.parse
 import urllib.request
 import urllib.error
+from urllib.parse import quote
 from queue import Queue
 from typing import Set
 
@@ -31,12 +33,12 @@ class Spider:
 
     @classmethod
     def file_type_validation(cls, url: str) -> bool:
-        return bool(re.search(cls.invalid_file_type, url.split(".")[-1]))
+        return not bool(re.search(cls.invalid_file_type, url.split(".")[-1]))
 
     @classmethod
-    def write_data(cls, response: http.client.HTTPResponse) -> bytes:
+    def write_data(cls, response: http.client.HTTPResponse, ext: str) -> bytes:
         data = response.read()
-        path = cls.page_folder + MyUtil.md5(response.geturl()) + ".html"
+        path = cls.page_folder + MyUtil.md5(response.geturl()) + "." + ext
         MyUtil.write_data(data, path)
         return data
 
@@ -49,10 +51,12 @@ class Spider:
         MyUtil.write_str(text, path)
 
     def process_html(self, response: http.client.HTTPResponse, url: str):
+        print("process_html")
         content_type = response.getheader('Content-Type')
         charset = content_type.split("charset=")[-1] \
             if "charset=" in content_type else "UTF-8"
         data = response.read()
+        print(data)
 
         parser = MyHTMLParser(url)
         parser.feed(data.decode(charset, 'ignore'))
@@ -78,9 +82,10 @@ class Spider:
 
     def process_file(self, response: http.client.HTTPResponse, url: str):
         if self.file_type_validation(url):
-            self.write_data(response)
+            self.write_data(response, response.geturl().split(".")[-1])
 
     def process_one_url(self, url: str):
+        url = quote(url, safe=string.printable)
         response: http.client.HTTPResponse = urllib.request.urlopen(url)
         content_type = response.getheader('Content-Type')
         if "text/html" in content_type:  # html
@@ -95,14 +100,13 @@ class Spider:
 
         try:
             self.process_one_url(url)
-        except urllib.error.HTTPError as error:
-            MyRedisUtil.set_exception(url, error)
-        except urllib.error.URLError as error:
-            MyRedisUtil.set_exception(url, error)
-        except ConnectionResetError as error:
-            MyRedisUtil.set_exception(url, error)
+        except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as error:
+            MyRedisUtil.set_known_exception(url, error)
+            MyRedisUtil.exceptional(url)
+            print("[exception]", type(error), error)
         except BaseException as error:
-            MyRedisUtil.set_exception(url, error)
+            MyRedisUtil.set_unknown_exception(url, error)
+            MyRedisUtil.exceptional(url)
             print("[exception]", type(error), error)
             traceback.print_exc()
 
@@ -150,7 +154,7 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 1000)
+    spider.run("new_job", 10)
     # spider.run("new_batch", 10)
     # spider.run("resume", 10)
     print("end")
