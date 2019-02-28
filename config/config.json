@@ -1,8 +1,9 @@
 {
     "path.document" : "C:/Users/wmpen/Desktop/NKUSearchEngine/documents/",
     "path.page" : "C:/Users/wmpen/Desktop/NKUSearchEngine/pages/",
+    "path.log" : "../logs/spider/",
 
-    "spider.valid_url" : "(.*nankai//.edu//.cn.*)|(202//.113//..*)|(222//.30//..*)",
+    "spider.valid_url" : "(.*nankai\\.edu\\.cn.*)|(202\\.113//..*)|(222\\.30\\..*)",
     "spider.invalid_file_type" : "mp4",
     "spider.browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36",
 

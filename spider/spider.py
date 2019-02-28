@@ -26,21 +26,27 @@ class Spider:
     page_folder = Config.get("path.page")
     doc_folder = Config.get("path.document")
 
-    def __init__(self):
+    def __init__(self, write_file=False):
         self.bfs_queue = Queue()
         self.visited: Set[str] = set()
         MyUtil.create_folders()
-        options = FireFoxOptions()
-        options.add_argument('--headless')
-        self.driver = webdriver.Firefox(options=options)
-        self.driver.set_window_size(1920, 1080 * 100)
+        self.driver_options = FireFoxOptions()
+        self.driver_options.add_argument('--headless')
+        self.driver = None
+        self.log_file = None
+        if write_file:
+            self.log_file = open(
+                MyUtil.gen_file_name(Config.get("path.log") + "/{}.log"), "w")
 
     def quit(self):
-        self.driver.quit()
+        if self.driver is not None:
+            self.driver.quit()
+        if self.log_file is not None:
+            self.log_file.close()
 
     @classmethod
     def url_validation(cls, url: str) -> bool:
-        return url is not None and re.search(cls.valid_rul, url)
+        return url is not None and bool(re.search(cls.valid_rul, url))
 
     @classmethod
     def file_type_validation(cls, url: str) -> bool:
@@ -69,6 +75,7 @@ class Spider:
         return not soup.find("title") or len_script / len_html > 0.5
 
     def process_html_text(self, html_text: str, url: str):
+        # print("process_html_text")
         parser = MyHTMLParser(url)
         parser.feed(html_text)
         for new_url in parser.new_urls:
@@ -92,13 +99,17 @@ class Spider:
                 self.write_doc(parser.text, doc_path)
 
     def process_html_by_webdriver(self, url: str):
-        print("process_html_by_webdriver")
+        # print("process_html_by_webdriver")
+        if self.driver is None:
+            self.driver = webdriver.Firefox(options=self.driver_options)
+            self.driver.set_window_size(1920, 1080 * 100)
+
         self.driver.get(url)
         html_text = self.driver.page_source
         self.process_html_text(html_text, url)
 
     def process_html(self, response: HTTPResponse, url: str) -> bool:
-        print("process_html")
+        # print("process_html")
         content_type = response.getheader('Content-Type')
         charset = "UTF-8" if "charset=" not in content_type \
             else content_type.split("charset=")[-1]
@@ -135,11 +146,11 @@ class Spider:
         except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as error:
             MyRedisUtil.set_known_exception(url, error)
             MyRedisUtil.exceptional(url)
-            print("[exception]", type(error), error)
+            print("[exception]", type(error), error, file=self.log_file)
         except BaseException as error:
             MyRedisUtil.set_unknown_exception(url, error)
             MyRedisUtil.exceptional(url)
-            print("[exception]", type(error), error)
+            print("[exception]", type(error), error, file=self.log_file)
             traceback.print_exc()
 
     def new_job(self):
@@ -169,11 +180,11 @@ class Spider:
             self.new_batch()
 
         for doc_cnt in range(max_doc_num):
-            print("count", doc_cnt, "queue_size", self.bfs_queue.qsize())
+            print("count", doc_cnt, "queue_size", self.bfs_queue.qsize(), file=self.log_file)
             if self.bfs_queue.empty():
                 break
             curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
-            print(time.time(), "searching: ", curr_url)
+            print(time.time(), "searching: ", curr_url, file=self.log_file)
             self.search(curr_url)
 
         MyRedisUtil.store_visited(self.visited)
@@ -182,12 +193,12 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider()
+    spider = Spider(write_file=True)
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 1)
-    # spider.quit()
+    spider.run("new_job", 50000)
     # spider.run("new_batch", 10)
     # spider.run("resume", 10)
+    spider.quit()
     print("end")

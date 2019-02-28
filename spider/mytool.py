@@ -2,6 +2,7 @@ import codecs
 import hashlib
 import json
 import os
+import time
 from typing import Dict
 import difflib
 
@@ -28,6 +29,8 @@ class Config:
 
 
 Config.read_json()
+
+
 # Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
 # Config.conf_dict["job.start_url"] = "http://xxgk.nankai.edu.cn/_redirect?siteId=55&columnId=2769&articleId=105109"
 # Config._conf_dict["job.start_url"] = "http://cc.nankai.edu.cn"
@@ -75,6 +78,10 @@ class MyUtil:
             return url[:-1]
         else:
             return url
+
+    @staticmethod
+    def gen_file_name(path: str):
+        return path.format(time.strftime('%Y%m%dT%H%M%S', time.localtime()))
 
 
 def print_info(fn):
