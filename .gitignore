@@ -2,3 +2,5 @@ pages/
 documents/
 .idea/
 __pycache__/
+
+*.log

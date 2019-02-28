@@ -7,42 +7,30 @@ import difflib
 
 
 class Config:
-    conf_dict: Dict[str, str] = dict()
+    _conf_dict: Dict[str, str] = dict()
 
     @classmethod
     def read_json(cls):
-        if not cls.conf_dict:
+        if not cls._conf_dict:
             with open("../config/config.json", "r") as f:
                 json_str = f.read()
-                cls.conf_dict = json.loads(json_str)
-
-    # @classmethod
-    # def doc_path(cls) -> str:
-    #     return cls.conf_dict["path.document"]
-    #
-    # @classmethod
-    # def page_path(cls) -> str:
-    #     return cls.conf_dict["path.page"]
-    #
-    # @classmethod
-    # def default_interval(cls) -> float:
-    #     return float(cls.conf_dict["redis.default_interval"])
+                cls._conf_dict = json.loads(json_str)
 
     @classmethod
     def get(cls, key: str) -> str:
-        val = cls.conf_dict.get(key)
+        val = cls._conf_dict.get(key)
         assert val is not None
         return val
 
     @classmethod
     def set(cls, key: str, val: str):
-        cls.conf_dict[key] = val
+        cls._conf_dict[key] = val
 
 
 Config.read_json()
 # Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
 # Config.conf_dict["job.start_url"] = "http://xxgk.nankai.edu.cn/_redirect?siteId=55&columnId=2769&articleId=105109"
-Config.conf_dict["job.start_url"] = "http://cc.nankai.edu.cn"
+# Config._conf_dict["job.start_url"] = "http://cc.nankai.edu.cn"
 
 
 class MyUtil:
@@ -54,7 +42,7 @@ class MyUtil:
 
     @staticmethod
     def create_folders():
-        for path_name, path in Config.conf_dict.items():
+        for path_name, path in Config._conf_dict.items():
             if path_name.startswith("path.") and not os.path.exists(path):
                 os.makedirs(path)
 

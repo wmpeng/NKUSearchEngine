@@ -1,15 +1,19 @@
-import http.client
 import os
 import re
 import string
 import time
 import traceback
+import urllib.error
 import urllib.parse
 import urllib.request
-import urllib.error
-from urllib.parse import quote
+from http.client import HTTPResponse
 from queue import Queue
 from typing import Set
+from urllib.parse import quote
+
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options as FireFoxOptions
 
 from myparser import MyHTMLParser
 from mytool import Config, MyUtil
@@ -26,6 +30,13 @@ class Spider:
         self.bfs_queue = Queue()
         self.visited: Set[str] = set()
         MyUtil.create_folders()
+        options = FireFoxOptions()
+        options.add_argument('--headless')
+        self.driver = webdriver.Firefox(options=options)
+        self.driver.set_window_size(1920, 1080 * 100)
+
+    def quit(self):
+        self.driver.quit()
 
     @classmethod
     def url_validation(cls, url: str) -> bool:
@@ -36,30 +47,30 @@ class Spider:
         return not bool(re.search(cls.invalid_file_type, url.split(".")[-1]))
 
     @classmethod
-    def write_data(cls, response: http.client.HTTPResponse, ext: str) -> bytes:
+    def write_data(cls, response: HTTPResponse, ext: str) -> bytes:
         data = response.read()
         path = cls.page_folder + MyUtil.md5(response.geturl()) + "." + ext
         MyUtil.write_data(data, path)
         return data
 
     @classmethod
-    def write_page(cls, data: bytes, path: str):
-        MyUtil.write_data(data, path)
+    def write_page(cls, text: str, path: str):
+        MyUtil.write_str(text, path)
 
     @classmethod
     def write_doc(cls, text: str, path: str):
         MyUtil.write_str(text, path)
 
-    def process_html(self, response: http.client.HTTPResponse, url: str):
-        print("process_html")
-        content_type = response.getheader('Content-Type')
-        charset = content_type.split("charset=")[-1] \
-            if "charset=" in content_type else "UTF-8"
-        data = response.read()
-        print(data)
+    @staticmethod
+    def need_webdriver(html_text: str) -> bool:
+        soup = BeautifulSoup(html_text, "lxml")
+        len_html = len(html_text)
+        len_script = len("".join([str(_) for _ in soup.find_all("script")]))
+        return not soup.find("title") or len_script / len_html > 0.5
 
+    def process_html_text(self, html_text: str, url: str):
         parser = MyHTMLParser(url)
-        parser.feed(data.decode(charset, 'ignore'))
+        parser.feed(html_text)
         for new_url in parser.new_urls:
             if new_url not in self.visited and self.url_validation(new_url):
                 self.bfs_queue.put(new_url)
@@ -68,7 +79,7 @@ class Spider:
         page_path = self.page_folder + MyUtil.md5(url) + ".html"
         if not os.path.exists(doc_path) or not MyRedisUtil.is_visited(url):
             MyRedisUtil.first_time(url)
-            self.write_page(data, page_path)
+            self.write_page(html_text, page_path)
             self.write_doc(parser.text, doc_path)
         else:
             old_text = MyUtil.read_str(doc_path)
@@ -77,19 +88,40 @@ class Spider:
                 MyRedisUtil.unchanged(url)
             else:
                 MyRedisUtil.changed(url)
-                self.write_page(data, page_path)
+                self.write_page(html_text, page_path)
                 self.write_doc(parser.text, doc_path)
 
-    def process_file(self, response: http.client.HTTPResponse, url: str):
+    def process_html_by_webdriver(self, url: str):
+        print("process_html_by_webdriver")
+        self.driver.get(url)
+        html_text = self.driver.page_source
+        self.process_html_text(html_text, url)
+
+    def process_html(self, response: HTTPResponse, url: str) -> bool:
+        print("process_html")
+        content_type = response.getheader('Content-Type')
+        charset = "UTF-8" if "charset=" not in content_type \
+            else content_type.split("charset=")[-1]
+        data = response.read()
+        if self.need_webdriver(data.decode(charset, 'ignore')):
+            return False
+
+        self.process_html_text(data.decode(charset, 'ignore'), url)
+        return True
+
+    def process_file(self, response: HTTPResponse, url: str):
         if self.file_type_validation(url):
             self.write_data(response, response.geturl().split(".")[-1])
 
     def process_one_url(self, url: str):
         url = quote(url, safe=string.printable)
-        response: http.client.HTTPResponse = urllib.request.urlopen(url)
+        headers = {'User-Agent': Config.get("spider.browser_user_agent")}
+        req = urllib.request.Request(url=url, headers=headers)
+        response: HTTPResponse = urllib.request.urlopen(req)
         content_type = response.getheader('Content-Type')
         if "text/html" in content_type:  # html
-            self.process_html(response, url)
+            if not self.process_html(response, url):
+                self.process_html_by_webdriver(url)
         else:  # other file
             self.process_file(response, url)
 
@@ -141,7 +173,7 @@ class Spider:
             if self.bfs_queue.empty():
                 break
             curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
-            print(time.time(), "searching", curr_url)
+            print(time.time(), "searching: ", curr_url)
             self.search(curr_url)
 
         MyRedisUtil.store_visited(self.visited)
@@ -154,7 +186,8 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 10)
+    spider.run("new_job", 1)
+    # spider.quit()
     # spider.run("new_batch", 10)
     # spider.run("resume", 10)
     print("end")
