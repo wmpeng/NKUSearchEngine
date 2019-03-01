@@ -3,7 +3,7 @@ import hashlib
 import json
 import os
 import time
-from typing import Dict
+from typing import Dict, Any
 import difflib
 
 
@@ -18,7 +18,7 @@ class Config:
                 cls._conf_dict = json.loads(json_str)
 
     @classmethod
-    def get(cls, key: str) -> str:
+    def get(cls, key: str) -> Any:
         val = cls._conf_dict.get(key)
         assert val is not None
         return val
@@ -34,6 +34,7 @@ Config.read_json()
 # Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
 # Config.conf_dict["job.start_url"] = "http://xxgk.nankai.edu.cn/_redirect?siteId=55&columnId=2769&articleId=105109"
 # Config._conf_dict["job.start_url"] = "http://cc.nankai.edu.cn"
+# Config._conf_dict["job.start_url"] = "http://zsb.nankai.edu.cn/download/content/id/48.html"
 
 
 class MyUtil:
