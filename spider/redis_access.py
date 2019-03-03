@@ -19,12 +19,18 @@ class MyRedisUtil:
     _start_md5 = MyUtil.md5(MyUtil.normalize_url(Config.get("job.start_url")))
 
     @classmethod
-    def _set(cls, name: str, key: str, val: str):
-        cls._redis.hset(cls._start_md5 + "_" + name, key, val)
+    def _set(cls, name: str, key: str, val: str, prefix: bool=True):
+        if prefix:
+            cls._redis.hset(cls._start_md5 + "_" + name, key, val)
+        else:
+            cls._redis.hset(name, key, val)
 
     @classmethod
-    def _get(cls, name: str, key: str) -> str:
-        return cls._redis.hget(cls._start_md5 + "_" + name, key)
+    def _get(cls, name: str, key: str, prefix: bool=True) -> str:
+        if prefix:
+            return cls._redis.hget(cls._start_md5 + "_" + name, key)
+        else:
+            return cls._redis.hget(name, key)
 
     @classmethod
     def _del(cls, name: str):
@@ -44,11 +50,11 @@ class MyRedisUtil:
 
     @classmethod
     def _set_url(cls, md5: str, url: str):
-        cls._set("url", md5, url)
+        cls._set("url", md5, url, False)
 
     @classmethod
     def _get_url(cls, md5: str):
-        cls._get("url", md5)
+        cls._get("url", md5, False)
 
     @classmethod
     def _set_visited(cls, md5: str, ts: float):
