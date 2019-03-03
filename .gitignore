@@ -3,6 +3,7 @@ documents/
 index/
 logs/
 
+.vscode/
 .idea/
 __pycache__/
 
