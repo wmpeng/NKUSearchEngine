@@ -6,11 +6,13 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import redis.RedisAccess;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,11 +35,16 @@ public class Index {
         assert files != null;
         for (File file : files)
             if (file.isFile()) {
+                String url = RedisAccess.getUrl(file.getName().split("\\.")[0]);
+                Field fieldUrl = new StringField("url", url, Field.Store.YES);
                 String content = FileUtils.readFileToString(file, "UTF-8");
                 Field fieldContent = new TextField("content", content, Field.Store.YES);
+                Field fieldTitle = new TextField("title", content.split("\r\n")[0], Field.Store.YES);
 
                 Document doc = new Document();
+                doc.add(fieldUrl);
                 doc.add(fieldContent);
+                doc.add(fieldTitle);
                 docs.add(doc);
             }
 

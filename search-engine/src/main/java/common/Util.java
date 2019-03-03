@@ -13,7 +13,7 @@ public class Util {
     public static Object getConfig(String name) {
         if (jsonObject == null) {
             File file = new File(configPath);
-            String content = null;
+            String content;
             try {
                 content = FileUtils.readFileToString(file, "UTF-8");
             } catch (IOException e) {
