@@ -12,6 +12,10 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.lionsoul.jcseg.analyzer.JcsegAnalyzer;
+import org.lionsoul.jcseg.tokenizer.core.JcsegTaskConfig;
+//import org.lionsoul.jcseg.core.JcsegTaskConfig;
+import org.wltea.analyzer.lucene.IKAnalyzer;
 import redis.RedisAccess;
 
 import java.io.File;
@@ -55,8 +59,17 @@ public class Index {
         List<Document> docs = readDocuments();
 
         Directory directory = FSDirectory.open(FileSystems.getDefault().getPath(indexFolder));
-        Analyzer standardAnalyzer = new StandardAnalyzer();
-        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(standardAnalyzer);
+//        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = new JcsegAnalyzer(JcsegTaskConfig.SIMPLE_MODE);
+        //非必须(用于修改默认配置): 获取分词任务配置实例
+        JcsegAnalyzer jcseg = (JcsegAnalyzer) analyzer;
+        JcsegTaskConfig config = jcseg.getTaskConfig();
+        //追加同义词到分词结果中, 需要在jcseg.properties中配置jcseg.loadsyn=1
+        config.setAppendCJKSyn(true);
+        //追加拼音到分词结果中, 需要在jcseg.properties中配置jcseg.loadpinyin=1
+        config.setAppendCJKPinyin(true);
+
+        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
         indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
         IndexWriter indexWriter = new IndexWriter(directory, indexWriterConfig);
 
