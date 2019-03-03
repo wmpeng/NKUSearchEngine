@@ -224,7 +224,7 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 10000)
+    spider.run("new_job", 100)
     # spider.run("new_batch", 10)
     # spider.run("resume", 10)
 
