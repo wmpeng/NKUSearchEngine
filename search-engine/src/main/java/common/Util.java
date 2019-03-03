@@ -7,22 +7,31 @@ import java.io.File;
 import java.io.IOException;
 
 public class Util {
-    private static JSONObject jsonObject = null;
+    private static JSONObject jsonObject1 = null;
+    private static JSONObject jsonObject2 = null;
     private static String configPath = "src\\main\\resources\\config\\config.json";
+    private static String secretConfigPath = "src\\main\\resources\\config\\secret-config.json";
 
     public static Object getConfig(String name) {
-        if (jsonObject == null) {
-            File file = new File(configPath);
-            String content;
+        if (jsonObject1 == null){
             try {
+                String content;
+                File file = new File(configPath);
                 content = FileUtils.readFileToString(file, "UTF-8");
+                jsonObject1 = new JSONObject(content);
+                file = new File(secretConfigPath);
+                content = FileUtils.readFileToString(file, "UTF-8");
+                jsonObject2 = new JSONObject(content);
             } catch (IOException e) {
                 e.printStackTrace();
-                content = "";
+                System.exit(1);
             }
-            jsonObject = new JSONObject(content);
         }
-        return jsonObject.get(name);
+        try{
+            return jsonObject1.get(name);
+        }catch (org.json.JSONException e){
+            return jsonObject2.get(name);
+        }
     }
 
     public static void main(String[] argv) throws IOException {

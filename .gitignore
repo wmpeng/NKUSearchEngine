@@ -1,8 +1,12 @@
 pages/
 documents/
+index/
+logs/
+
 .idea/
 __pycache__/
 
 *.log
 
-/target
+target/
+secret-config.json
