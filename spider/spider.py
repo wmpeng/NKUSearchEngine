@@ -30,8 +30,8 @@ class Spider:
     download_temp_folder = Config.get("path.download_temp_dir")
 
     def __init__(self, debug_mode=False, download_file=True):
-        self.bfs_queue = Queue()
-        self.visited: Set[str] = set()
+        # self.bfs_queue = Queue()
+        # self.visited: Set[str] = set()
         MyUtil.create_folders()
 
         self.download_file = download_file
@@ -91,9 +91,12 @@ class Spider:
         parser = MyHTMLParser(url)
         parser.feed(html_text)
         for new_url in parser.new_urls:
-            if new_url not in self.visited and self.url_validation(new_url):
-                self.bfs_queue.put(new_url)
+            # if new_url not in self.visited and self.url_validation(new_url):
+            if self.url_validation(new_url) and not MyRedisUtil.check_visited(new_url):
+                # self.bfs_queue.put(new_url)
+                MyRedisUtil.push_need_search(new_url)
 
+        # print("!")
         doc_path = self.doc_folder + MyUtil.md5(url) + ".txt"
         page_path = self.page_folder + MyUtil.md5(url) + ".html"
         if not os.path.exists(doc_path) or not MyRedisUtil.is_visited(url):
@@ -115,13 +118,15 @@ class Spider:
         if self.driver is None:
             self.driver = webdriver.Firefox(firefox_profile=self.firefox_profile, options=self.driver_options)
             self.driver.set_window_size(1920, 1080 * 100)
+            self.driver.set_page_load_timeout(5)  # in seconds
+            self.driver.set_script_timeout(5)
 
         self.driver.get(url)
         html_text = self.driver.page_source
         self.process_html_text(html_text, url)
 
         for file_name in os.listdir(self.download_temp_folder):
-            os.remove(self.download_temp_folder+"\\"+file_name)
+            os.remove(self.download_temp_folder + "\\" + file_name)
         time.sleep(Config.get("spider.wait_download_max_sec"))
         if os.listdir(self.download_temp_folder):
             file_name = os.listdir(self.download_temp_folder)[0]
@@ -147,10 +152,11 @@ class Spider:
             self.write_data(response, url, response.geturl().split(".")[-1])
 
     def process_one_url(self, url: str):
+        # print("process_one_url")
         url = quote(url, safe=string.printable)
         headers = {'User-Agent': Config.get("spider.browser_user_agent")}
         req = urllib.request.Request(url=url, headers=headers)
-        response: HTTPResponse = urllib.request.urlopen(req)
+        response: HTTPResponse = urllib.request.urlopen(req, timeout=1)
         content_type = response.getheader('Content-Type')
         if "text/html" in content_type:  # html
             if not self.process_html(response, url):
@@ -160,7 +166,8 @@ class Spider:
 
     def search(self, url: str):
         print(time.time(), "searching: ", url, file=self.log_file)
-        self.visited.add(url)
+        # self.visited.add(url)
+        MyRedisUtil.set_visited(url)
         if not MyRedisUtil.need_search(url):
             return
 
@@ -178,19 +185,23 @@ class Spider:
 
     def new_job(self):
         MyRedisUtil.flush()
-        self.bfs_queue.put(Config.get("job.start_url"))
+        # self.bfs_queue.put(Config.get("job.start_url"))
+        MyRedisUtil.push_need_search(Config.get("job.start_url"))
 
     def resume_batch(self):
-        self.bfs_queue = MyRedisUtil.get_queue()
-        self.visited = MyRedisUtil.get_visited()
+        # self.bfs_queue = MyRedisUtil.get_queue()
+        # self.visited = MyRedisUtil.get_visited()
+        pass
 
     def new_batch(self):
         all_urls = MyRedisUtil.get_all_urls()
         if all_urls:
             for url in all_urls:
-                self.bfs_queue.put(url)
+                # self.bfs_queue.put(url)
+                MyRedisUtil.push_need_search(url)
         else:
-            self.bfs_queue.put(Config.get("job.start_url"))
+            # self.bfs_queue.put(Config.get("job.start_url"))
+            MyRedisUtil.push_need_search(Config.get("job.start_url"))
 
     def run(self, mode: str, max_doc_num: int = 2 ** 20):
         assert (mode in ["new_job", "resume", "new_batch"])
@@ -204,29 +215,32 @@ class Spider:
 
         for doc_cnt in range(max_doc_num):
             try:
-                print("count", doc_cnt, "queue_size", self.bfs_queue.qsize(), file=self.log_file)
-                if self.bfs_queue.empty():
+                # print("count", doc_cnt, "queue_size", self.bfs_queue.qsize(), file=self.log_file)
+                queue_size = MyRedisUtil.need_search_num()
+                print("count", doc_cnt, "queue_size", queue_size, file=self.log_file)
+                if queue_size == 0:
                     break
-                curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
+                # curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
+                curr_url: str = MyUtil.normalize_url(MyRedisUtil.pop_need_search())
                 self.search(curr_url)
             except BaseException as error:
-                MyRedisUtil.set_unknown_exception(str(time.time()), error)
+                MyRedisUtil.set_unknown_exception("", error)
                 print("[exception]", type(error), error, file=self.log_file)
                 traceback.print_exc(file=self.log_file)
 
-        MyRedisUtil.store_visited(self.visited)
-        MyRedisUtil.store_queue(self.bfs_queue)
+        # MyRedisUtil.store_visited(self.visited)
+        # MyRedisUtil.store_queue(self.bfs_queue)
 
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False)
+    spider = Spider(download_file=False, debug_mode=True)
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 100)
-    # spider.run("new_batch", 10)
-    # spider.run("resume", 10)
+    spider.run("new_job", 10)
+    # spider.run("new_batch", 100)
+    # spider.run("resume", 80000)
 
     spider.quit()
     print("end")

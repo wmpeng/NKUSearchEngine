@@ -1,5 +1,5 @@
 import queue
-from typing import Union, List, Set
+from typing import Union, List, Set, Optional
 
 import redis
 import time
@@ -19,14 +19,14 @@ class MyRedisUtil:
     _start_md5 = MyUtil.md5(MyUtil.normalize_url(Config.get("job.start_url")))
 
     @classmethod
-    def _set(cls, name: str, key: str, val: str, prefix: bool=True):
+    def _set(cls, name: str, key: str, val: str, prefix: bool = True):
         if prefix:
             cls._redis.hset(cls._start_md5 + "_" + name, key, val)
         else:
             cls._redis.hset(name, key, val)
 
     @classmethod
-    def _get(cls, name: str, key: str, prefix: bool=True) -> str:
+    def _get(cls, name: str, key: str, prefix: bool = True) -> str:
         if prefix:
             return cls._redis.hget(cls._start_md5 + "_" + name, key)
         else:
@@ -49,12 +49,34 @@ class MyRedisUtil:
         return cls._redis.lrange(cls._start_md5 + "_" + name, 0, -1)
 
     @classmethod
+    def _pop_list(cls, name) -> str:
+        return cls._redis.lpop(cls._start_md5 + "_" + name)
+
+    @classmethod
+    def _push_set(cls, name: str, val: str):
+        cls._redis.sadd(cls._start_md5 + "_" + name, val)
+
+    @classmethod
+    def _pop_set(cls, name: str) -> str:
+        ret = cls._redis.spop(cls._start_md5 + "_" + name)
+        return ret
+
+    @classmethod
+    def _check_set(cls, name: str, val: str) -> bool:
+        return cls._redis.sismember(cls._start_md5 + "_" + name, val)
+
+    @classmethod
+    def _set_number(cls, name) -> int:
+        return cls._redis.scard(cls._start_md5 + "_" + name)
+
+    @classmethod
     def _set_url(cls, md5: str, url: str):
+        cls._set("url", md5, url)
         cls._set("url", md5, url, False)
 
     @classmethod
-    def _get_url(cls, md5: str):
-        cls._get("url", md5, False)
+    def _get_url(cls, md5: str) -> str:
+        return cls._get("url", md5)
 
     @classmethod
     def _set_visited(cls, md5: str, ts: float):
@@ -187,8 +209,10 @@ class MyRedisUtil:
         cls._del("visited")
         cls._del("interval")
         cls._del("next_time")
-        cls._del("snap_visited")
-        cls._del("snap_queue")
+        # cls._del("snap_visited")
+        # cls._del("snap_queue")
+        cls._del("store_need_search")
+        cls._del("store_visited")
 
     @classmethod
     def store_visited(cls, val: Set[str]):
@@ -216,7 +240,44 @@ class MyRedisUtil:
 
     @classmethod
     def stored_breakpoint(cls) -> bool:
-        return bool(cls.get_visited())
+        return bool(cls.get_visited() and cls.get_queue())
+
+    @classmethod
+    def push_need_search(cls, url) -> None:
+        md5 = MyUtil.md5(url)
+        cls._set_url(md5, url)
+
+        cls._push_set("store_need_search", md5)
+
+    @classmethod
+    def pop_need_search(cls) -> Optional[str]:
+        md5 = cls._pop_set("store_need_search")
+        if md5 is None:
+            return None
+        url = cls._get_url(md5)
+        return url
+
+    @classmethod
+    def need_search_num(cls) -> int:
+        return cls._set_number("store_need_search")
+
+    @classmethod
+    def set_visited(cls, url: str) -> None:
+        md5 = MyUtil.md5(url)
+        cls._set_url(md5, url)
+
+        cls._push_set("store_visited", md5)
+
+    @classmethod
+    def check_visited(cls, url: str) -> bool:
+        md5 = MyUtil.md5(url)
+        cls._set_url(md5, url)
+
+        return cls._check_set("store_visited", md5)
+
+    @classmethod
+    def visited_num(cls) -> int:
+        return cls._set_number("store_visited")
 
 
 if __name__ == "__main__":
@@ -250,5 +311,16 @@ if __name__ == "__main__":
     # MyRedisUtil.get_list("list1")
 
     # MyRedisUtil.flush_all()
+    # MyRedisUtil.push_need_search("a1")
+    # MyRedisUtil.push_need_search("a2")
+    # MyRedisUtil.push_need_search("a3")
+
+    url_ = MyRedisUtil.pop_need_search()
+    print(url_)
+    MyRedisUtil.set_visited(url_)
+
+    print(MyRedisUtil.check_visited("a1"))
+    print(MyRedisUtil.check_visited("a2"))
+    print(MyRedisUtil.check_visited("a3"))
 
     print("end")
