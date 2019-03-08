@@ -250,21 +250,19 @@ class Spider:
 
 
 if __name__ == "__main__":
+    print("begin")
     spider = Spider(download_file=False, debug_mode=False)
-    print(spider.url_validation("aaa.lib.nankai.edu.cn/aaa"))
-    # print("begin")
-    # spider = Spider(download_file=False, debug_mode=False)
-    #
-    # try:
-    #     mode = sys.argv[1]
-    #     max_doc_num = int(sys.argv[2])
-    # except:
-    #     print("invalid parameters")
-    #     exit(-1)
-    #
-    # spider.run(mode, max_doc_num)
-    # # spider.run("new_batch", 100)
-    # # spider.run("resume", 80000)
-    #
-    # spider.quit()
-    # print("end")
+
+    try:
+        mode = sys.argv[1]
+        max_doc_num = int(sys.argv[2])
+    except:
+        print("invalid parameters")
+        exit(-1)
+
+    spider.run(mode, max_doc_num)
+    # spider.run("new_batch", 100)
+    # spider.run("resume", 80000)
+
+    spider.quit()
+    print("end")
