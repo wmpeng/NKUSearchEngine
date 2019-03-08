@@ -1,6 +1,6 @@
 {
-    "path.document" : "C:\\Users\\wmpen\\Desktop\\NKUSearchEngine\\documents\\",
-    "path.index" : "C:\\Users\\wmpen\\Desktop\\NKUSearchEngine\\index\\",
+    "path.document" : "",
+    "path.index" : "",
 
     "search.top_k": 20,
     "search.fragment_size": 128

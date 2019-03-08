@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FireFoxOptions
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 from myparser import MyHTMLParser
 from mytool import Config, MyUtil
@@ -35,15 +36,22 @@ class Spider:
         MyUtil.create_folders()
 
         self.download_file = download_file
-        self.firefox_profile = FirefoxProfile()
-        if download_file:
-            # 0 for desktop, 1 for system downloads folder, 2 for "browser.download.dir"
-            self.firefox_profile.set_preference("browser.download.folderList", 2)
-            self.firefox_profile.set_preference("browser.download.manager.showWhenStarting", False)
-            self.firefox_profile.set_preference("browser.download.dir", self.download_temp_folder)
-            self.firefox_profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
-        self.driver_options = FireFoxOptions()
-        self.driver_options.add_argument('--headless')
+        if Config.get("spider.browser") == "firefox":
+            self.profile = FirefoxProfile()
+            if download_file:
+                # 0 for desktop, 1 for system downloads folder, 2 for "browser.download.dir"
+                self.profile.set_preference("browser.download.folderList", 2)
+                self.profile.set_preference("browser.download.manager.showWhenStarting", False)
+                self.profile.set_preference("browser.download.dir", self.download_temp_folder)
+                self.profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
+            self.driver_options = FireFoxOptions()
+            self.driver_options.add_argument('--headless')
+        elif Config.get("spider.browser") == "chrome":
+            self.driver_options = ChromeOptions()
+            self.driver_options.add_argument('--headless')
+            prefs = {'profile.default_content_settings.popups': 0,
+                     'download.default_directory': self.download_temp_folder}
+            self.driver_options.add_experimental_option('prefs', prefs)
         self.driver = None
 
         self.log_file = None
@@ -116,10 +124,13 @@ class Spider:
     def process_html_by_webdriver(self, url: str):
         # print("process_html_by_webdriver")
         if self.driver is None:
-            self.driver = webdriver.Firefox(firefox_profile=self.firefox_profile, options=self.driver_options)
+            if Config.get("spider.browser") == "firefox":
+                self.driver = webdriver.Firefox(firefox_profile=self.profile, options=self.driver_options)
+            elif Config.get("spider.browser") == "chrome":
+                self.driver = webdriver.Chrome(options=self.driver_options)
             self.driver.set_window_size(1920, 1080 * 100)
-            self.driver.set_page_load_timeout(5)  # in seconds
-            self.driver.set_script_timeout(5)
+            self.driver.set_page_load_timeout(Config.get("spider.driver.page_load_timeout"))  # in seconds
+            self.driver.set_script_timeout(Config.get("spider.driver.script_timeout"))  # in seconds
 
         self.driver.get(url)
         html_text = self.driver.page_source
@@ -156,7 +167,7 @@ class Spider:
         url = quote(url, safe=string.printable)
         headers = {'User-Agent': Config.get("spider.browser_user_agent")}
         req = urllib.request.Request(url=url, headers=headers)
-        response: HTTPResponse = urllib.request.urlopen(req, timeout=1)
+        response: HTTPResponse = urllib.request.urlopen(req, timeout=Config.get("spider.urlopen_timeout"))
         content_type = response.getheader('Content-Type')
         if "text/html" in content_type:  # html
             if not self.process_html(response, url):
@@ -238,7 +249,7 @@ if __name__ == "__main__":
     # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
     # begin_url = "http://www.nankai.edu.cn/"
     # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 10)
+    spider.run("new_job", 1)
     # spider.run("new_batch", 100)
     # spider.run("resume", 80000)
 

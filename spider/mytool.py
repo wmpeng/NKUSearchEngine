@@ -13,10 +13,13 @@ class Config:
     @classmethod
     def read_json(cls):
         if not cls._conf_dict:
-            with open("../config/config.json", "r") as f:
+            with open("./config/config.json", "r") as f:
                 json_str = f.read()
                 cls._conf_dict = json.loads(json_str)
-            with open("../config/secret-config.json", "r") as f:
+            with open("./config/secret-config.json", "r") as f:
+                json_str = f.read()
+                cls._conf_dict.update(json.loads(json_str))
+            with open("./config/local-config.json", "r") as f:
                 json_str = f.read()
                 cls._conf_dict.update(json.loads(json_str))
 

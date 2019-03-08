@@ -10,7 +10,7 @@ from mytool import Config, MyUtil, print_info
 # service redis stop
 class MyRedisUtil:
     _host = Config.get("redis.host")
-    _port = int(Config.get("redis.port"))
+    _port = Config.get("redis.port")
     _pool = redis.ConnectionPool(host=_host, port=_port, decode_responses=True)
     _redis = redis.Redis(connection_pool=_pool)
     _default_interval = float(Config.get("job.default_interval"))
