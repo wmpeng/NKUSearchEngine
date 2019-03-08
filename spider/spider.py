@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import string
+import sys
 import time
 import traceback
 import urllib.error
@@ -66,7 +67,9 @@ class Spider:
 
     @classmethod
     def url_validation(cls, url: str) -> bool:
-        return url is not None and bool(re.search(cls.valid_rul, url))
+        return url is not None \
+               and bool(re.search(cls.valid_rul, url)) \
+               and not bool(re.search(Config.get("spider.invalid_url"), url))
 
     @classmethod
     def file_type_validation(cls, url: str) -> bool:
@@ -179,7 +182,7 @@ class Spider:
         print(time.time(), "searching: ", url, file=self.log_file)
         # self.visited.add(url)
         MyRedisUtil.set_visited(url)
-        if not MyRedisUtil.need_search(url):
+        if not MyRedisUtil.need_search(url) or not self.url_validation(url):
             return
 
         try:
@@ -221,8 +224,11 @@ class Spider:
             self.new_job()
         elif mode == "resume" and MyRedisUtil.stored_breakpoint():
             self.resume_batch()
-        else:
+        elif mode == "new_batch":
             self.new_batch()
+        else:
+            print("invalid mode")
+            exit(-1)
 
         for doc_cnt in range(max_doc_num):
             try:
@@ -244,14 +250,21 @@ class Spider:
 
 
 if __name__ == "__main__":
-    print("begin")
-    spider = Spider(download_file=False, debug_mode=True)
-    # begin_url = "http://cs.nankai.edu.cn/index.php/zh/2016-12-07-18-31-35/1588-2019-2"
-    # begin_url = "http://www.nankai.edu.cn/"
-    # begin_url = "http://cs.nankai.edu.cn/"
-    spider.run("new_job", 1)
-    # spider.run("new_batch", 100)
-    # spider.run("resume", 80000)
-
-    spider.quit()
-    print("end")
+    spider = Spider(download_file=False, debug_mode=False)
+    print(spider.url_validation("aaa.lib.nankai.edu.cn/aaa"))
+    # print("begin")
+    # spider = Spider(download_file=False, debug_mode=False)
+    #
+    # try:
+    #     mode = sys.argv[1]
+    #     max_doc_num = int(sys.argv[2])
+    # except:
+    #     print("invalid parameters")
+    #     exit(-1)
+    #
+    # spider.run(mode, max_doc_num)
+    # # spider.run("new_batch", 100)
+    # # spider.run("resume", 80000)
+    #
+    # spider.quit()
+    # print("end")
