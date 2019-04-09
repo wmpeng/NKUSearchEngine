@@ -26,7 +26,7 @@ class Config:
     @classmethod
     def get(cls, key: str) -> Any:
         val = cls._conf_dict.get(key)
-        assert val is not None
+        assert val is not None, key
         return val
 
     @classmethod

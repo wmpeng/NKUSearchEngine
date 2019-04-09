@@ -20,7 +20,7 @@ from selenium.webdriver.firefox.options import Options as FireFoxOptions
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 from myparser import MyHTMLParser
-from mytool import Config, MyUtil
+from mytool import Config, MyUtil, print_info
 from redis_access import MyRedisUtil
 
 
@@ -31,7 +31,7 @@ class Spider:
     doc_folder = Config.get("path.document")
     download_temp_folder = Config.get("path.download_temp_dir")
 
-    def __init__(self, debug_mode=False, download_file=True):
+    def __init__(self, download_file=True, debug_mode=False):
         # self.bfs_queue = Queue()
         # self.visited: Set[str] = set()
         MyUtil.create_folders()
@@ -135,20 +135,23 @@ class Spider:
             self.driver.set_page_load_timeout(Config.get("spider.driver.page_load_timeout"))  # in seconds
             self.driver.set_script_timeout(Config.get("spider.driver.script_timeout"))  # in seconds
 
+        if self.download_file:
+            for file_name in os.listdir(self.download_temp_folder):
+                os.remove(self.download_temp_folder + "\\" + file_name)
+
         self.driver.get(url)
         html_text = self.driver.page_source
         self.process_html_text(html_text, url)
 
-        for file_name in os.listdir(self.download_temp_folder):
-            os.remove(self.download_temp_folder + "\\" + file_name)
-        time.sleep(Config.get("spider.wait_download_max_sec"))
-        if os.listdir(self.download_temp_folder):
-            file_name = os.listdir(self.download_temp_folder)[0]
-            old_path = self.download_temp_folder + "\\" + file_name
-            ext = file_name.split(".")[-1] if "." in file_name else ""
-            new_file_name = MyUtil.md5(url) + "." + ext
-            new_path = self.doc_folder + "\\" + new_file_name
-            shutil.move(old_path, new_path)
+        if self.download_file:
+            time.sleep(Config.get("spider.driver.wait_download_max_sec"))
+            if os.listdir(self.download_temp_folder):
+                file_name = os.listdir(self.download_temp_folder)[0]
+                old_path = self.download_temp_folder + "\\" + file_name
+                ext = file_name.split(".")[-1] if "." in file_name else ""
+                new_file_name = MyUtil.md5(url) + "." + ext
+                new_path = self.doc_folder + "\\" + new_file_name
+                shutil.move(old_path, new_path)
 
     def process_html(self, response: HTTPResponse, url: str) -> bool:
         # print("process_html")
@@ -251,15 +254,18 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=False)
+    spider = Spider(download_file=False, debug_mode=True)
 
-    try:
-        mode = sys.argv[1]
-        max_doc_num = int(sys.argv[2])
-    except:
-        print("invalid parameters")
-        exit(-1)
-
+    # try:
+    #     mode = sys.argv[1]
+    #     max_doc_num = int(sys.argv[2])
+    # except:
+    #     print("invalid parameters")
+    #     exit(-1)
+    mode = "new_job"
+    max_doc_num = 10
+    
+    # todo handle ctrl+c
     spider.run(mode, max_doc_num)
     # spider.run("new_batch", 100)
     # spider.run("resume", 80000)
