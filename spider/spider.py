@@ -2,25 +2,22 @@ import os
 import re
 import shutil
 import string
-import sys
 import time
 import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
 from http.client import HTTPResponse
-from queue import Queue
-from typing import Set
 from urllib.parse import quote
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver import FirefoxProfile
-from selenium.webdriver.firefox.options import Options as FireFoxOptions
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FireFoxOptions
 
 from myparser import MyHTMLParser
-from mytool import Config, MyUtil, print_info
+from mytool import Config, MyUtil
 from redis_access import MyRedisUtil
 
 
@@ -110,17 +107,17 @@ class Spider:
         # print("!")
         doc_path = self.doc_folder + MyUtil.md5(url) + ".txt"
         page_path = self.page_folder + MyUtil.md5(url) + ".html"
-        if not os.path.exists(doc_path) or not MyRedisUtil.is_visited(url):
-            MyRedisUtil.first_time(url)
+        if not os.path.exists(doc_path) or not MyRedisUtil.have_visited(url):
+            MyRedisUtil.first_time_visit(url)
             self.write_page(html_text, page_path)
             self.write_doc(parser.text, doc_path)
         else:
             old_text = MyUtil.read_str(doc_path)
             diff_ratio = MyUtil.diff_ratio(old_text, parser.text)
             if diff_ratio > 0.99:
-                MyRedisUtil.unchanged(url)
+                MyRedisUtil.unchanged_visit(url)
             else:
-                MyRedisUtil.changed(url)
+                MyRedisUtil.changed_visit(url)
                 self.write_page(html_text, page_path)
                 self.write_doc(parser.text, doc_path)
 
@@ -184,7 +181,7 @@ class Spider:
     def search(self, url: str):
         print(time.time(), "searching: ", url, file=self.log_file)
         # self.visited.add(url)
-        MyRedisUtil.set_visited(url)
+        MyRedisUtil.push_visited(url)
         if not MyRedisUtil.need_search(url) or not self.url_validation(url):
             return
 
@@ -192,25 +189,28 @@ class Spider:
             self.process_one_url(url)
         except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as error:
             MyRedisUtil.set_known_exception(url, error)
-            MyRedisUtil.exceptional(url)
+            MyRedisUtil.exceptional_visit(url)
             print("[exception]", type(error), error, file=self.log_file)
         except BaseException as error:
             MyRedisUtil.set_unknown_exception(url, error)
-            MyRedisUtil.exceptional(url)
+            MyRedisUtil.exceptional_visit(url)
             print("[exception]", type(error), error, file=self.log_file)
             traceback.print_exc(file=self.log_file)
 
-    def new_job(self):
+    @staticmethod
+    def new_job():
         MyRedisUtil.flush()
         # self.bfs_queue.put(Config.get("job.start_url"))
         MyRedisUtil.push_need_search(Config.get("job.start_url"))
 
-    def resume_batch(self):
+    @staticmethod
+    def resume_batch():
         # self.bfs_queue = MyRedisUtil.get_queue()
         # self.visited = MyRedisUtil.get_visited()
         pass
 
-    def new_batch(self):
+    @staticmethod
+    def new_batch():
         all_urls = MyRedisUtil.get_all_urls()
         if all_urls:
             for url in all_urls:
@@ -225,8 +225,11 @@ class Spider:
 
         if mode == "new_job":
             self.new_job()
-        elif mode == "resume" and MyRedisUtil.stored_breakpoint():
-            self.resume_batch()
+        elif mode == "resume":
+            if MyRedisUtil.need_search_num() == 0:
+                return False
+            else:
+                self.resume_batch()
         elif mode == "new_batch":
             self.new_batch()
         else:
@@ -250,6 +253,7 @@ class Spider:
 
         # MyRedisUtil.store_visited(self.visited)
         # MyRedisUtil.store_queue(self.bfs_queue)
+        return True
 
 
 if __name__ == "__main__":
@@ -257,16 +261,16 @@ if __name__ == "__main__":
     spider = Spider(download_file=False, debug_mode=True)
 
     # try:
-    #     mode = sys.argv[1]
-    #     max_doc_num = int(sys.argv[2])
+    #     mode_ = sys.argv[1]
+    #     max_doc_num_ = int(sys.argv[2])
     # except:
     #     print("invalid parameters")
     #     exit(-1)
-    mode = "new_job"
-    max_doc_num = 10
-    
+    mode_ = "new_job"
+    max_doc_num_ = 10
+
     # todo handle ctrl+c
-    spider.run(mode, max_doc_num)
+    spider.run(mode_, max_doc_num_)
     # spider.run("new_batch", 100)
     # spider.run("resume", 80000)
 
