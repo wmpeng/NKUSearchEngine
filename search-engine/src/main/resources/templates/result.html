@@ -1,0 +1,67 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>搜索结果</title>
+	<!-- <link href="css/style.css" rel="stylesheet" type="text/css" />
+	<link href="css/result.css" rel="stylesheet" type="text/css" /> -->
+</head>
+
+<body>
+	<table width="1000" border="0" cellpadding="1" cellspacing="0" align="center">
+		<tbody>
+
+			<tr>
+				<th height="200" scope="col" align="center">
+					<form method="get" action="search">
+						<table>
+							<tbody>
+								<tr>
+									<td colspan="2" align="center">
+										<label for="teamName">搜索</label>
+									</td>
+								</tr>
+								<tr>
+									<td><input type="text" name="search" id="search"></td>
+								</tr>
+								<tr>
+									<td colspan="2" align="center">
+										<input type="reset">
+										<input type="submit" name="submit">
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+				</th>
+			</tr>
+
+			<tr>
+				<td height="200" align="center">
+					<h2>结果:</h2>
+					<table>
+						<tbody th:each="snippet: ${result}">
+						<tr>
+							<td>
+								<div class="itemHead">
+									<a th:href="${snippet[0]}" target="_blank" class="title" th:text="${snippet[1]}">title</a>
+								</div>
+								<div class="itemBody" th:utext=${snippet[2]}>
+									text
+								</div>
+							</td>
+						</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+
+
+</body>
+
+</html>

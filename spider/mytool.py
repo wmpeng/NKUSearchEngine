@@ -13,9 +13,15 @@ class Config:
     @classmethod
     def read_json(cls):
         if not cls._conf_dict:
-            with open("../config/config.json", "r") as f:
+            with open("./config/config.json", "r") as f:
                 json_str = f.read()
                 cls._conf_dict = json.loads(json_str)
+            with open("./config/secret-config.json", "r") as f:
+                json_str = f.read()
+                cls._conf_dict.update(json.loads(json_str))
+            with open("./config/local-config.json", "r") as f:
+                json_str = f.read()
+                cls._conf_dict.update(json.loads(json_str))
 
     @classmethod
     def get(cls, key: str) -> Any:
@@ -34,7 +40,7 @@ Config.read_json()
 # Config.conf_dict["job.start_url"] = "http://www.nankai.edu.cn"
 # Config.conf_dict["job.start_url"] = "http://xxgk.nankai.edu.cn/_redirect?siteId=55&columnId=2769&articleId=105109"
 # Config._conf_dict["job.start_url"] = "http://cc.nankai.edu.cn"
-# Config._conf_dict["job.start_url"] = "http://zsb.nankai.edu.cn/download/content/id/48.html"
+# Config._conf_dict["job.start_url"] = "aaaa"
 
 
 class MyUtil:
@@ -88,6 +94,7 @@ class MyUtil:
 def print_info(fn):
     def print_name(*args):
         print("[fn_name]", fn.__name__)
+        print("[fn_args]", *args)
         result = fn(*args)
         print("[fn_return]", result)
         return result

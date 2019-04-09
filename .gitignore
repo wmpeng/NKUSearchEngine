@@ -1,6 +1,14 @@
 pages/
 documents/
+index/
+logs/
+
+.vscode/
 .idea/
 __pycache__/
 
 *.log
+
+target/
+secret-config.json
+local-config.json

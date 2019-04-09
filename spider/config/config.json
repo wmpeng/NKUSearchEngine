@@ -1,0 +1,21 @@
+{
+  "path.document" : "",
+  "path.page" : "",
+  "path.log" : "",
+  "path.download_temp_dir": "",
+
+  "spider.valid_url" : "(.*nankai\\.edu\\.cn.*)|(202\\.113//..*)|(222\\.30\\..*)",
+  "spider.invalid_url" : "(.*opac.lib.nankai\\.edu\\.cn.*)|(.*jsessionid.*)",
+  "spider.invalid_file_type" : "mp4",
+  "spider.browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36",
+  "spider.urlopen_timeout": 1.0,
+  "spider.driver.wait_download_max_sec": 2.0,
+  "spider.driver.page_load_timeout": 2.0,
+  "spider.driver.script_timeout": 2.0,
+  "spider.browser": "firefox",
+
+  "job.default_interval": 86400,
+  "job.min_interval": 3600,
+  "job.max_interval": 8640000,
+  "job.start_url": "http://www.nankai.edu.cn"
+}
