@@ -42,13 +42,21 @@ class Spider:
                 self.profile.set_preference("browser.download.manager.showWhenStarting", False)
                 self.profile.set_preference("browser.download.dir", self.download_temp_folder)
                 self.profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
+            self.profile.set_preference("permissions.default.image", 2)  # no images
+            self.profile.set_preference("permissions.default.stylesheet", 2)  # no CSS
+            self.profile.set_preference("dom.ipc.plugins.enabled.libflashplayer.so", False)  # no Flash
             self.driver_options = FireFoxOptions()
             self.driver_options.add_argument('--headless')
         elif Config.get("spider.browser") == "chrome":
             self.driver_options = ChromeOptions()
-            self.driver_options.add_argument('--headless')
+            # self.driver_options.add_argument('--no-sandbox')
+            # self.driver_options.add_argument('--disable-dev-shm-usage')
+            # self.driver_options.add_argument('--disable-gpu')
+            # self.driver_options.add_argument('--log-level=3')
+            # self.driver_options.add_argument('--headless')
             prefs = {'profile.default_content_settings.popups': 0,
-                     'download.default_directory': self.download_temp_folder}
+                     'download.default_directory': self.download_temp_folder,
+                     "profile.managed_default_content_settings.images":2}  # no images
             self.driver_options.add_experimental_option('prefs', prefs)
         self.driver = None
 
@@ -258,17 +266,17 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=True)
+    spider = Spider(download_file=False, debug_mode=False)
 
-    # try:
-    #     mode_ = sys.argv[1]
-    #     max_doc_num_ = int(sys.argv[2])
-    # except:
-    #     print("invalid parameters")
-    #     exit(-1)
-    mode_ = "new_job"
-    max_doc_num_ = 10
-
+    try:
+        mode = sys.argv[1]
+        max_doc_num = int(sys.argv[2])
+    except:
+        print("invalid parameters")
+        exit(-1)
+    # mode = "new_job"
+    # max_doc_num = 10
+    
     # todo handle ctrl+c
     spider.run(mode_, max_doc_num_)
     # spider.run("new_batch", 100)
