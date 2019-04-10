@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import shutil
 import string
@@ -199,6 +200,8 @@ class Spider:
             MyRedisUtil.set_known_exception(url, error)
             MyRedisUtil.exceptional_visit(url)
             print("[exception]", type(error), error, file=self.log_file)
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except BaseException as error:
             MyRedisUtil.set_unknown_exception(url, error)
             MyRedisUtil.exceptional_visit(url)
@@ -254,6 +257,8 @@ class Spider:
                 # curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
                 curr_url: str = MyUtil.normalize_url(MyRedisUtil.pop_need_search())
                 self.search(curr_url)
+            except (KeyboardInterrupt, SystemExit):
+                raise
             except BaseException as error:
                 MyRedisUtil.set_unknown_exception("", error)
                 print("[exception]", type(error), error, file=self.log_file)
@@ -266,19 +271,22 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=False)
+    spider = Spider(download_file=False, debug_mode=True)
 
     try:
-        mode = sys.argv[1]
-        max_doc_num = int(sys.argv[2])
+        mode_ = sys.argv[1]
+        max_doc_num_ = int(sys.argv[2])
     except:
         print("invalid parameters")
         exit(-1)
-    # mode = "new_job"
-    # max_doc_num = 10
+    # mode- = "new_job"
+    # max_doc_num- = 10
     
     # todo handle ctrl+c
-    spider.run(mode_, max_doc_num_)
+    try:
+        spider.run(mode_, max_doc_num_)
+    except KeyboardInterrupt as error:
+        print("Exit by KeyboardInterrupt.")
     # spider.run("new_batch", 100)
     # spider.run("resume", 80000)
 

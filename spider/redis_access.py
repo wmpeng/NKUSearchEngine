@@ -138,7 +138,7 @@ class MyRedisUtil:
 
     @classmethod
     def add_exception(cls, md5: str, prefix: str, exception_info: str):
-        cls.accessor.hash_set(prefix + "exception", md5, exception_info)
+        cls.accessor.hash_set(prefix + "_exception", md5, exception_info)
 
     @classmethod
     def set_visit_info(cls, md5: str, interval: float):
@@ -225,7 +225,7 @@ class MyRedisUtil:
     # @classmethod
     # def store_visited(cls, val: Set[str]):
     #     cls.accessor.delete("snap_visited")
-    #     if len(val) != 0:
+    #   fl) != 0:
     #         cls.accessor.list_push("snap_visited", list(val))
 
     # @classmethod
