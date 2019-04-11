@@ -35,7 +35,7 @@ class MyRedisAccessor:
         #     return cls._redis.hget(cls._start_md5 + "_" + name, key)
         # else:
         #     return cls._redis.hget(name, key)
-        return cls._redis.hget(name, key)
+        return cls._redis.hget(cls._start_md5 + "_" + name, key)
 
     @classmethod
     def hash_get_vals(cls, name: str) -> List[str]:
@@ -335,3 +335,5 @@ if __name__ == "__main__":
     # print(MyRedisUtil.check_visited("a3"))
     #
     # print("end")
+
+    # print(MyRedisUtil.have_visited("http://nankai.edu.cn"))
