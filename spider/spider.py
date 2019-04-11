@@ -12,6 +12,7 @@ from http.client import HTTPResponse
 from urllib.parse import quote
 
 from bs4 import BeautifulSoup
+import selenium
 from selenium import webdriver
 from selenium.webdriver import FirefoxProfile
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -148,8 +149,11 @@ class Spider:
         self.driver.get(url)
         try:
             self.driver.switch_to.alert.accept()
-        except:
+        except selenium.common.exceptions.NoAlertPresentException:
             pass
+        except:
+            raise
+        
         html_text = self.driver.page_source
         self.process_html_text(html_text, url)
 
@@ -201,6 +205,12 @@ class Spider:
         try:
             self.process_one_url(url)
         except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as error:
+            MyRedisUtil.set_known_exception(url, error)
+            MyRedisUtil.exceptional_visit(url)
+            print("[exception]", type(error), error, file=self.log_file)
+        except selenium.common.exceptions.WebDriverException as error:
+            self.driver.quit()
+            self.driver = None
             MyRedisUtil.set_known_exception(url, error)
             MyRedisUtil.exceptional_visit(url)
             print("[exception]", type(error), error, file=self.log_file)
@@ -283,15 +293,11 @@ if __name__ == "__main__":
     except:
         print("invalid parameters")
         exit(-1)
-    # mode_ = "new_job"
-    # max_doc_num_ = 10
     
     try:
         spider.run(mode_, max_doc_num_)
     except KeyboardInterrupt as error:
         print("Exit by KeyboardInterrupt.")
-    # spider.run("new_batch", 100)
-    # spider.run("resume", 80000)
 
     spider.quit()
     print("end")
