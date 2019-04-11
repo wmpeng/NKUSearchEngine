@@ -131,7 +131,7 @@ class Spider:
                 self.write_doc(parser.text, doc_path)
 
     def process_html_by_webdriver(self, url: str):
-        # print("process_html_by_webdriver")
+        print("process_html_by_webdriver", file=self.log_file)
         if self.driver is None:
             if Config.get("spider.browser") == "firefox":
                 self.driver = webdriver.Firefox(firefox_profile=self.profile, options=self.driver_options)
@@ -188,7 +188,7 @@ class Spider:
             self.process_file(response, url)
 
     def search(self, url: str):
-        print(time.time(), "searching: ", url, file=self.log_file)
+        print(time.time(), "searching: ", url, MyUtil.md5(url), file=self.log_file)
         # self.visited.add(url)
         MyRedisUtil.push_visited(url)
         if not MyRedisUtil.need_search(url) or not self.url_validation(url):
@@ -271,7 +271,7 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=True)
+    spider = Spider(download_file=False, debug_mode=False)
 
     try:
         mode_ = sys.argv[1]
