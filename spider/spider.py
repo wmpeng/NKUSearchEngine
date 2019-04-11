@@ -146,6 +146,10 @@ class Spider:
                 os.remove(self.download_temp_folder + "\\" + file_name)
 
         self.driver.get(url)
+        try:
+            self.driver.switch_to.alert.accept()
+        except:
+            pass
         html_text = self.driver.page_source
         self.process_html_text(html_text, url)
 
@@ -279,10 +283,9 @@ if __name__ == "__main__":
     except:
         print("invalid parameters")
         exit(-1)
-    # mode- = "new_job"
-    # max_doc_num- = 10
+    # mode_ = "new_job"
+    # max_doc_num_ = 10
     
-    # todo handle ctrl+c
     try:
         spider.run(mode_, max_doc_num_)
     except KeyboardInterrupt as error:
