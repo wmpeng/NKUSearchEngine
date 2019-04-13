@@ -1,0 +1,13 @@
+{
+    "path.document" : "",
+    "path.index" : "",
+
+    "redis.host" : "",
+    "redis.port" : 6379,
+
+    "search.top_k": 20,
+    "search.snippet_length": 128,
+
+    "search_server.host": "",
+    "search_server.port": 8888
+}

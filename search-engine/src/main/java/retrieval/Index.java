@@ -30,7 +30,7 @@ public class Index {
     private static String docFolder = (String) Util.getConfig("path.document");
     private static String indexFolder = (String) Util.getConfig("path.index");
 
-    private List<Document> readDocuments() throws IOException {
+    private static List<Document> readDocuments() throws IOException {
         List<Document> docs = new ArrayList<>();
         File folder = new File(docFolder);
         assert folder.isDirectory();
@@ -55,7 +55,7 @@ public class Index {
         return docs;
     }
 
-    private void createIndex() throws IOException {
+    private static void _createIndex() throws IOException {
         List<Document> docs = readDocuments();
 
         Directory directory = FSDirectory.open(FileSystems.getDefault().getPath(indexFolder));
@@ -80,8 +80,13 @@ public class Index {
         directory.close();
     }
 
-    public static void main(String[] args) throws IOException {
-        Index index = new Index();
-        index.createIndex();
+    public static boolean createIndex() {
+        try{
+            _createIndex();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 }

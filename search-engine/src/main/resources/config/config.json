@@ -1,7 +1,0 @@
-{
-    "path.document" : "",
-    "path.index" : "",
-
-    "search.top_k": 20,
-    "search.fragment_size": 128
-}

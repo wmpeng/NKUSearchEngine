@@ -28,7 +28,7 @@ import java.util.List;
 public class Search {
     private static String indexFolder = (String) Util.getConfig("path.index");
 
-    public static List<List<String>> query(String queryStr) throws ParseException, IOException, InvalidTokenOffsetsException {
+    public static List<List<String>> _query(String queryStr) throws ParseException, IOException, InvalidTokenOffsetsException {
         List<List<String>> result = new ArrayList<>();
 
 //        Analyzer analyzer = new StandardAnalyzer();
@@ -51,7 +51,7 @@ public class Search {
 
         SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<font color='red'>", "</font>");
         Highlighter highlighter = new Highlighter(simpleHTMLFormatter, new QueryScorer(query));
-        highlighter.setTextFragmenter(new SimpleFragmenter((int) Util.getConfig("search.fragment_size")));
+        highlighter.setTextFragmenter(new SimpleFragmenter((int) Util.getConfig("search.snippet_length")));
 
         for (ScoreDoc scoreDoc : scoreDocs) {
             int docID = scoreDoc.doc;
@@ -70,9 +70,21 @@ public class Search {
         return result;
     }
 
-    public static void main(String[] args) throws IOException, ParseException, InvalidTokenOffsetsException {
-//        List<String> result = query("南开大学");
-////        for (String snippet : result)
-////            System.out.println(snippet);
+    public static List<List<String>> query(String queryStr){
+        List<List<String>> queryRes;
+        try{
+            queryRes = _query(queryStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            queryRes = new ArrayList<>();
+        } catch (IOException e) {
+            e.printStackTrace();
+            queryRes = new ArrayList<>();
+        } catch (InvalidTokenOffsetsException e) {
+            e.printStackTrace();
+            queryRes = new ArrayList<>();
+        }
+
+        return queryRes;
     }
 }
