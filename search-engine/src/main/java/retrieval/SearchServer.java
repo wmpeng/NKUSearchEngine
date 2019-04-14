@@ -20,21 +20,25 @@ public class SearchServer {
         try {
             server = new ServerSocket(port);
             while (true) {
-                Socket socket;
-                socket = server.accept();
-                BufferedReader clientReader = new BufferedReader(new InputStreamReader(socket.getInputStream(),"UTF-8"));
-                String queryStr = clientReader.readLine();
-                System.out.println("QueryStr: " + queryStr);
+                try {
+                    Socket socket;
+                    socket = server.accept();
+                    BufferedReader clientReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                    String queryStr = clientReader.readLine();
+                    System.out.println("QueryStr: " + queryStr);
 
-                List<List<String>> queryRes;
-                queryRes = Search.query(queryStr);
+                    List<List<String>> queryRes;
+                    queryRes = Search.query(queryStr);
 
-                ObjectOutputStream clientSender = new ObjectOutputStream(socket.getOutputStream());
-                clientSender.writeObject(queryRes);
-                clientSender.flush();
+                    ObjectOutputStream clientSender = new ObjectOutputStream(socket.getOutputStream());
+                    clientSender.writeObject(queryRes);
+                    clientSender.flush();
 
-                clientSender.close();
-                clientReader.close();
+                    clientSender.close();
+                    clientReader.close();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
         } catch (IOException e) {

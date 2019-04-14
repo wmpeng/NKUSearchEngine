@@ -83,6 +83,9 @@ public class Search {
         } catch (InvalidTokenOffsetsException e) {
             e.printStackTrace();
             queryRes = new ArrayList<>();
+        } catch (Exception e){
+            e.printStackTrace();
+            queryRes = new ArrayList<>();
         }
 
         return queryRes;
