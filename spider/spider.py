@@ -51,11 +51,11 @@ class Spider:
             self.driver_options.add_argument('--headless')
         elif Config.get("spider.browser") == "chrome":
             self.driver_options = ChromeOptions()
-            # self.driver_options.add_argument('--no-sandbox')
+            self.driver_options.add_argument('--no-sandbox')
             # self.driver_options.add_argument('--disable-dev-shm-usage')
-            # self.driver_options.add_argument('--disable-gpu')
+            self.driver_options.add_argument('--disable-gpu')
             # self.driver_options.add_argument('--log-level=3')
-            # self.driver_options.add_argument('--headless')
+            self.driver_options.add_argument('--headless')
             prefs = {'profile.default_content_settings.popups': 0,
                      'download.default_directory': self.download_temp_folder,
                      "profile.managed_default_content_settings.images":2}  # no images
