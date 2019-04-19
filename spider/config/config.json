@@ -13,6 +13,8 @@
   "spider.driver.page_load_timeout": 2.0,
   "spider.driver.script_timeout": 2.0,
   "spider.browser": "firefox",
+  "spider.proxy_type":"http",
+  "spider.proxy_url":"no_host",
 
   "job.default_interval": 86400,
   "job.min_interval": 3600,
