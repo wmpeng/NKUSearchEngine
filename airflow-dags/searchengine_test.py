@@ -1,0 +1,100 @@
+import os
+from datetime import datetime, timedelta
+
+import airflow
+import pendulum
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from airflow.operators.python_operator import PythonOperator
+
+default_args = {
+    'owner': 'wmpeng',
+    'depends_on_past': False,
+    'start_date': datetime(2019, 4, 20),
+    'retries': 0,
+    'retry_delay': timedelta(minutes=10)
+}
+
+dag = DAG('se_test',
+          default_args=default_args,
+          schedule_interval=timedelta(hours=1),
+          max_active_runs=1)
+
+
+def spider_fn(ds, **kwargs):
+    now = pendulum.now()
+    next_execution = kwargs["next_execution_date"]
+    if now < next_execution:
+        print("[*] Not skip.")
+        os.system(
+            "cd /root/repostories/NKUSearchEngine/spider && "
+            "activate base && "
+            "python spider.py new_batch 10")
+        print("[*] Task Spider finished.")
+    else:
+        print("[*] Skip.")
+
+
+def build_fn(ds, **kwargs):
+    now = pendulum.now()
+    next_execution = kwargs["next_execution_date"]
+    if now < next_execution:
+        print("[*] Not skip.")
+        os.system(
+            "cd /root/repostories/NKUSearchEngine && "
+            "git checkout product && "
+            "git pull")
+        os.system(
+            "cd /root/repostories/NKUSearchEngine/search-engine/src/main/bin"
+            " && "
+            "bash package.sh")
+        print("[*] Task Build finished.")
+    else:
+        print("[*] Skip.")
+
+
+def index_fn(ds, **kwargs):
+    now = pendulum.now()
+    next_execution = kwargs["next_execution_date"]
+    if now < next_execution:
+        print("[*] Not skip.")
+        os.system(
+            "cd /root/repostories/NKUSearchEngine/search-engine/target && "
+            "java -jar search-engine-0.1-jar-with-dependencies.jar prod index"
+        )
+        print("[*] Task Index finished.")
+    else:
+        print("[*] Skip.")
+
+
+task_print = BashOperator(
+    task_id="print",
+    bash_command="echo [*] begin at {{ ts }}",
+    dag=dag
+)
+
+task_spider = PythonOperator(
+    task_id='spider',
+    provide_context=True,
+    python_callable=spider_fn,
+    dag=dag
+)
+
+task_build = PythonOperator(
+    task_id='build',
+    provide_context=True,
+    python_callable=build_fn,
+    dag=dag
+)
+
+task_index = PythonOperator(
+    task_id='index',
+    provide_context=True,
+    python_callable=index_fn,
+    dag=dag
+)
+
+task_spider.set_upstream(task_print)
+task_build.set_upstream(task_print)
+task_index.set_upstream(task_build)
+task_index.set_upstream(task_spider)
