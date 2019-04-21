@@ -1,9 +1,12 @@
 package common;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,8 +31,8 @@ public class Util {
         assert input != null : "Config path is not exist.";
 
         try {
-            content = new String(input.readAllBytes());
-        } catch (IOException e) {
+            content = new String(IOUtils.toByteArray(input));
+        } catch (Exception e) {
             content = "";
         }
         JSONObject jsonObject = new JSONObject(content);

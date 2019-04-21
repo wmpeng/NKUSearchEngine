@@ -8,6 +8,6 @@
     "search.top_k": 20,
     "search.snippet_length": 128,
 
-    "search_server.host": "",
+    "search_server.host": "localhost",
     "search_server.port": 8888
 }

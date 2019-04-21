@@ -8,6 +8,7 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+from urllib.request import OpenerDirector
 from http.client import HTTPResponse
 from urllib.parse import quote
 
@@ -34,6 +35,11 @@ class Spider:
         # self.bfs_queue = Queue()
         # self.visited: Set[str] = set()
         MyUtil.create_folders()
+        base_handler = urllib.request.BaseHandler()
+        proxy_handler = None if Config.get("spider.proxy_url") == "no_host" \
+            else urllib.request.ProxyHandler({Config.get("spider.proxy_type"): Config.get("spider.proxy_url")})
+        self.base_opener: OpenerDirector = urllib.request.build_opener(base_handler)
+        self.proxy_opener: OpenerDirector = urllib.request.build_opener(proxy_handler)
 
         self.download_file = download_file
         if Config.get("spider.browser") == "firefox":
@@ -51,14 +57,15 @@ class Spider:
             self.driver_options.add_argument('--headless')
         elif Config.get("spider.browser") == "chrome":
             self.driver_options = ChromeOptions()
-            # self.driver_options.add_argument('--no-sandbox')
+            self.driver_options.add_argument('--no-sandbox')
             # self.driver_options.add_argument('--disable-dev-shm-usage')
-            # self.driver_options.add_argument('--disable-gpu')
+            self.driver_options.add_argument('--disable-gpu')
             # self.driver_options.add_argument('--log-level=3')
-            # self.driver_options.add_argument('--headless')
+            self.driver_options.add_argument('--headless')
+            self.driver_options.add_argument('--proxy-server={}'.format(Config.get("spider.proxy_url")))
             prefs = {'profile.default_content_settings.popups': 0,
                      'download.default_directory': self.download_temp_folder,
-                     "profile.managed_default_content_settings.images":2}  # no images
+                     "profile.managed_default_content_settings.images": 2}  # no images
             self.driver_options.add_experimental_option('prefs', prefs)
         self.driver = None
 
@@ -151,9 +158,9 @@ class Spider:
             self.driver.switch_to.alert.accept()
         except selenium.common.exceptions.NoAlertPresentException:
             pass
-        except:
+        except BaseException:
             raise
-        
+
         html_text = self.driver.page_source
         self.process_html_text(html_text, url)
 
@@ -187,7 +194,16 @@ class Spider:
         url = quote(url, safe=string.printable)
         headers = {'User-Agent': Config.get("spider.browser_user_agent")}
         req = urllib.request.Request(url=url, headers=headers)
-        response: HTTPResponse = urllib.request.urlopen(req, timeout=Config.get("spider.urlopen_timeout"))
+        # response: HTTPResponse = urllib.request.urlopen(req, timeout=Config.get("spider.urlopen_timeout"))
+        try:
+            print("try self.base_opener")
+            response: HTTPResponse = self.base_opener.open(req, timeout=Config.get("spider.urlopen_timeout"))
+        except urllib.error.HTTPError as e:
+            if e.code == 403 and self.proxy_opener is not None:  # Forbidden
+                print("try self.proxy_opener")
+                response: HTTPResponse = self.proxy_opener.open(req, timeout=Config.get("spider.urlopen_timeout"))
+            else:
+                raise
         content_type = response.getheader('Content-Type')
         if "text/html" in content_type:  # html
             if not self.process_html(response, url):
@@ -204,22 +220,22 @@ class Spider:
 
         try:
             self.process_one_url(url)
-        except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as error:
-            MyRedisUtil.set_known_exception(url, error)
+        except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as e:
+            MyRedisUtil.set_known_exception(url, e)
             MyRedisUtil.exceptional_visit(url)
-            print("[exception]", type(error), error, file=self.log_file)
-        except selenium.common.exceptions.WebDriverException as error:
+            print("[exception]", type(e), e, file=self.log_file)
+        except selenium.common.exceptions.WebDriverException as e:
             self.driver.quit()
             self.driver = None
-            MyRedisUtil.set_known_exception(url, error)
+            MyRedisUtil.set_known_exception(url, e)
             MyRedisUtil.exceptional_visit(url)
-            print("[exception]", type(error), error, file=self.log_file)
+            print("[exception]", type(e), e, file=self.log_file)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except BaseException as error:
-            MyRedisUtil.set_unknown_exception(url, error)
+        except BaseException as e:
+            MyRedisUtil.set_unknown_exception(url, e)
             MyRedisUtil.exceptional_visit(url)
-            print("[exception]", type(error), error, file=self.log_file)
+            print("[exception]", type(e), e, file=self.log_file)
             traceback.print_exc(file=self.log_file)
 
     @staticmethod
@@ -272,10 +288,11 @@ class Spider:
                 curr_url: str = MyUtil.normalize_url(MyRedisUtil.pop_need_search())
                 self.search(curr_url)
             except (KeyboardInterrupt, SystemExit):
+                MyRedisUtil.push_need_search(curr_url)
                 raise
-            except BaseException as error:
-                MyRedisUtil.set_unknown_exception("", error)
-                print("[exception]", type(error), error, file=self.log_file)
+            except BaseException as e:
+                MyRedisUtil.set_unknown_exception("", e)
+                print("[exception]", type(e), e, file=self.log_file)
                 traceback.print_exc(file=self.log_file)
 
         # MyRedisUtil.store_visited(self.visited)
@@ -285,15 +302,15 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=False)
+    spider = Spider(download_file=False, debug_mode=True)
 
     try:
         mode_ = sys.argv[1]
         max_doc_num_ = int(sys.argv[2])
-    except:
+    except BaseException:
         print("invalid parameters")
         exit(-1)
-    
+
     try:
         spider.run(mode_, max_doc_num_)
     except KeyboardInterrupt as error:
