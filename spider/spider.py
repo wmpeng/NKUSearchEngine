@@ -288,6 +288,7 @@ class Spider:
                 curr_url: str = MyUtil.normalize_url(MyRedisUtil.pop_need_search())
                 self.search(curr_url)
             except (KeyboardInterrupt, SystemExit):
+                MyRedisUtil.push_need_search(curr_url)
                 raise
             except BaseException as e:
                 MyRedisUtil.set_unknown_exception("", e)

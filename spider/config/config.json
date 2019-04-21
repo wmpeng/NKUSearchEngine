@@ -16,6 +16,9 @@
   "spider.proxy_type":"http",
   "spider.proxy_url":"no_host",
 
+  "redis.host": "localhost",
+  "redis.port": 6379,
+
   "job.default_interval": 86400,
   "job.min_interval": 3600,
   "job.max_interval": 8640000,
