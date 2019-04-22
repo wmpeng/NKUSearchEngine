@@ -11,7 +11,7 @@ default_args = {
     'owner': 'wmpeng',
     'depends_on_past': False,
     'start_date': datetime(2019, 4, 20),
-    'retries': 0,
+    'retries': 1,
     'retry_delay': timedelta(minutes=10)
 }
 
@@ -21,10 +21,28 @@ dag = DAG('se_test',
           max_active_runs=1)
 
 
+def print_fn(ds, **kwargs):
+    now = pendulum.now()
+    execution_date = kwargs["execution_date"]
+    # If the excution is manually triggered,
+    # kwargs["next_execution_date"] is equal to kwargs["execution_date"]
+    next_trigger = kwargs["next_execution_date"] + dag.schedule_interval
+    print("now", now)
+    print("execution_date", execution_date)
+    print("next_trigger", next_trigger)
+    if now < next_trigger:
+        print("[*] Not skip.")
+        print(f"[*] Begin task {execution_date}.")
+    else:
+        print("[*] Skip.")
+
+
 def spider_fn(ds, **kwargs):
     now = pendulum.now()
-    next_execution = kwargs["next_execution_date"]
-    if now < next_execution:
+    next_trigger = kwargs["next_execution_date"] + dag.schedule_interval
+    print("now", now)
+    print("next_trigger", next_trigger)
+    if now < next_trigger:
         print("[*] Not skip.")
         os.system(
             "cd /root/repostories/NKUSearchEngine/spider && "
@@ -37,16 +55,17 @@ def spider_fn(ds, **kwargs):
 
 def build_fn(ds, **kwargs):
     now = pendulum.now()
-    next_execution = kwargs["next_execution_date"]
-    if now < next_execution:
+    next_trigger = kwargs["next_execution_date"] + dag.schedule_interval
+    print("now", now)
+    print("next_trigger", next_trigger)
+    if now < next_trigger:
         print("[*] Not skip.")
         os.system(
             "cd /root/repostories/NKUSearchEngine && "
             "git checkout product && "
             "git pull")
         os.system(
-            "cd /root/repostories/NKUSearchEngine/search-engine/src/main/bin"
-            " && "
+            "cd /root/repostories/NKUSearchEngine/search-engine/src/main/bin && "
             "bash package.sh")
         print("[*] Task Build finished.")
     else:
@@ -55,8 +74,10 @@ def build_fn(ds, **kwargs):
 
 def index_fn(ds, **kwargs):
     now = pendulum.now()
-    next_execution = kwargs["next_execution_date"]
-    if now < next_execution:
+    next_trigger = kwargs["next_execution_date"] + dag.schedule_interval
+    print("now", now)
+    print("next_trigger", next_trigger)
+    if now < next_trigger:
         print("[*] Not skip.")
         os.system(
             "cd /root/repostories/NKUSearchEngine/search-engine/target && "
@@ -67,9 +88,10 @@ def index_fn(ds, **kwargs):
         print("[*] Skip.")
 
 
-task_print = BashOperator(
-    task_id="print",
-    bash_command="echo [*] begin at {{ ts }}",
+task_print = PythonOperator(
+    task_id='print',
+    provide_context=True,
+    python_callable=print_fn,
     dag=dag
 )
 
