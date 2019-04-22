@@ -302,7 +302,7 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=True)
+    spider = Spider(download_file=False, debug_mode=False)
 
     try:
         mode_ = sys.argv[1]

@@ -220,3 +220,29 @@ java -jar search-engine-0.1-jar-with-dependencies.jar prod index
 
 `env`可选`dev`和`prod`，使用对应的配置文件。
 `job_type`可选`index`和`server`，分别表示建立索引和开始监听查询。每次爬取之后要重新建立索引才能使用新的文档。
+
+# airflow
+
+## 开启`webserver`服务
+
+```bash
+airflow webserver -D
+```
+
+## 开启`scheduler`
+
+```bash
+airflow scheduler -D
+```
+
+## 测试`dag`和`task`
+
+```bash
+airflow test dag_id task_id datetime
+```
+
+例如：
+
+```bash
+airflow test se_test index 20190421T15:00
+```
