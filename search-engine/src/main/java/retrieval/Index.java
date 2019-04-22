@@ -43,7 +43,7 @@ public class Index {
                 Field fieldUrl = new StringField("url", url, Field.Store.YES);
                 String content = FileUtils.readFileToString(file, "UTF-8");
                 Field fieldContent = new TextField("content", content, Field.Store.YES);
-                Field fieldTitle = new TextField("title", content.split("\r\n")[0], Field.Store.YES);
+                Field fieldTitle = new TextField("title", content.split("(\r\n)|(\n)")[0], Field.Store.YES);
 
                 Document doc = new Document();
                 doc.add(fieldUrl);
