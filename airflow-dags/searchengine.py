@@ -36,6 +36,21 @@ def print_fn(ds, **kwargs):
     else:
         print("[*] Skip.")
 
+def gitpull_fn(ds, **kwargs):
+    now = pendulum.now()
+    next_trigger = kwargs["next_execution_date"] + dag.schedule_interval
+    print("now", now)
+    print("next_trigger", next_trigger)
+    if now < next_trigger:
+        print("[*] Not skip.")
+        os.system(
+            "cd /root/repostories/NKUSearchEngine && "
+            "git checkout product && "
+            "git pull")
+        print("[*] Task GitPull finished.")
+    else:
+        print("[*] Skip.")
+
 
 def spider_fn(ds, **kwargs):
     now = pendulum.now()
@@ -47,7 +62,7 @@ def spider_fn(ds, **kwargs):
         os.system(
             "cd /root/repostories/NKUSearchEngine/spider && "
             "activate base && "
-            "python spider.py new_batch 1000000")
+            "python spider.py auto 10000000")
         print("[*] Task Spider finished.")
     else:
         print("[*] Skip.")
@@ -60,10 +75,10 @@ def build_fn(ds, **kwargs):
     print("next_trigger", next_trigger)
     if now < next_trigger:
         print("[*] Not skip.")
-        os.system(
-            "cd /root/repostories/NKUSearchEngine && "
-            "git checkout product && "
-            "git pull")
+        # os.system(
+        #     "cd /root/repostories/NKUSearchEngine && "
+        #     "git checkout product && "
+        #     "git pull")
         os.system(
             "cd /root/repostories/NKUSearchEngine/search-engine/src/main/bin && "
             "bash package.sh")
@@ -95,6 +110,13 @@ task_print = PythonOperator(
     dag=dag
 )
 
+task_gitpull = PythonOperator(
+    task_id='gitpull',
+    provide_context=True,
+    python_callable=gitpull_fn,
+    dag=dag
+)
+
 task_spider = PythonOperator(
     task_id='spider',
     provide_context=True,
@@ -116,7 +138,8 @@ task_index = PythonOperator(
     dag=dag
 )
 
-task_spider.set_upstream(task_print)
-task_build.set_upstream(task_print)
+task_gitpull.set_upstream(task_print)
+task_spider.set_upstream(task_gitpull)
+task_build.set_upstream(task_gitpull)
 task_index.set_upstream(task_build)
 task_index.set_upstream(task_spider)

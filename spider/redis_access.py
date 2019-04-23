@@ -143,9 +143,9 @@ class MyRedisUtil:
     @classmethod
     def set_visit_info(cls, md5: str, interval: float):
         ts = time.time()
-        cls.set_last_time(md5, ts)
         cls.set_interval(md5, interval)
         cls.set_next_time(md5, ts + interval)
+        cls.set_last_time(md5, ts)
 
     @classmethod
     def have_visited(cls, url: str):
