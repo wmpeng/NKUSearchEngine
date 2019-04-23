@@ -47,7 +47,7 @@ def spider_fn(ds, **kwargs):
         os.system(
             "cd /root/repostories/NKUSearchEngine/spider && "
             "activate base && "
-            "python spider.py new_batch 1000000")
+            "python spider.py auto 10000000")
         print("[*] Task Spider finished.")
     else:
         print("[*] Skip.")

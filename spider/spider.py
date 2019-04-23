@@ -196,11 +196,11 @@ class Spider:
         req = urllib.request.Request(url=url, headers=headers)
         # response: HTTPResponse = urllib.request.urlopen(req, timeout=Config.get("spider.urlopen_timeout"))
         try:
-            print("try self.base_opener")
+            print("try self.base_opener", file=self.log_file)
             response: HTTPResponse = self.base_opener.open(req, timeout=Config.get("spider.urlopen_timeout"))
         except urllib.error.HTTPError as e:
             if e.code == 403 and self.proxy_opener is not None:  # Forbidden
-                print("try self.proxy_opener")
+                print("try self.proxy_opener", file=self.log_file)
                 response: HTTPResponse = self.proxy_opener.open(req, timeout=Config.get("spider.urlopen_timeout"))
             else:
                 raise
@@ -261,8 +261,15 @@ class Spider:
             # self.bfs_queue.put(Config.get("job.start_url"))
             MyRedisUtil.push_need_search(Config.get("job.start_url"))
 
+    @classmethod
+    def auto(cls):
+        if MyRedisUtil.get_all_urls():  # not empty
+            cls.resume_batch()
+        else:  # empty
+            cls.new_batch()
+
     def run(self, mode: str, max_doc_num: int = 2 ** 20):
-        assert (mode in ["new_job", "resume", "new_batch"])
+        assert (mode in ["new_job", "resume", "new_batch", "auto"])
 
         if mode == "new_job":
             self.new_job()
@@ -273,10 +280,13 @@ class Spider:
                 self.resume_batch()
         elif mode == "new_batch":
             self.new_batch()
+        elif mode == "auto":
+            self.auto()
         else:
             print("invalid mode")
             exit(-1)
 
+        curr_url = None
         for doc_cnt in range(max_doc_num):
             try:
                 # print("count", doc_cnt, "queue_size", self.bfs_queue.qsize(), file=self.log_file)
@@ -287,8 +297,10 @@ class Spider:
                 # curr_url: str = MyUtil.normalize_url(self.bfs_queue.get())
                 curr_url: str = MyUtil.normalize_url(MyRedisUtil.pop_need_search())
                 self.search(curr_url)
+                curr_url = None
             except (KeyboardInterrupt, SystemExit):
-                MyRedisUtil.push_need_search(curr_url)
+                if curr_url is not None:
+                    MyRedisUtil.push_need_search(curr_url)
                 raise
             except BaseException as e:
                 MyRedisUtil.set_unknown_exception("", e)
@@ -302,7 +314,7 @@ class Spider:
 
 if __name__ == "__main__":
     print("begin")
-    spider = Spider(download_file=False, debug_mode=False)
+    spider = Spider(download_file=False, debug_mode=True)
 
     try:
         mode_ = sys.argv[1]
