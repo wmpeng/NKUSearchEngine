@@ -60,10 +60,10 @@ def build_fn(ds, **kwargs):
     print("next_trigger", next_trigger)
     if now < next_trigger:
         print("[*] Not skip.")
-        os.system(
-            "cd /root/repostories/NKUSearchEngine && "
-            "git checkout product && "
-            "git pull")
+        # os.system(
+        #     "cd /root/repostories/NKUSearchEngine && "
+        #     "git checkout product && "
+        #     "git pull")
         os.system(
             "cd /root/repostories/NKUSearchEngine/search-engine/src/main/bin && "
             "bash package.sh")
