@@ -83,7 +83,6 @@ public class RedisAccess {
     }
 
     public static Boolean needIndex(String md5) {
-        System.out.println("! "+Util.md5((String)Util.getConfig("job.start_url"))+"_need_index");
         Boolean val = isSetMember(Util.md5((String)Util.getConfig("job.start_url"))+"_need_index", md5);
         return val;
     }

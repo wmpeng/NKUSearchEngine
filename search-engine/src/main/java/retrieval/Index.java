@@ -41,11 +41,6 @@ public class Index {
             if (file.isFile()) {
                 try {
                     String md5 = file.getName().split("\\.")[0];
-                    if(md5=="a0c5e59106372739e1882a339189d511") {
-                        System.out.println("a0c5e59106372739e1882a339189d511");
-                        System.out.println(RedisAccess.needIndex(md5));
-                        System.out.println(RedisAccess.needIndexSetFalse(md5));
-                    }
                     if (RedisAccess.needIndex(md5) && RedisAccess.needIndexSetFalse(md5)) {
                         String url = RedisAccess.getUrl(md5);
                         Field fieldUrl = new StringField("url", url, Field.Store.YES);
