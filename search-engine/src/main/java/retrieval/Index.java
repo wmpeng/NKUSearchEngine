@@ -39,17 +39,21 @@ public class Index {
         assert files != null;
         for (File file : files)
             if (file.isFile()) {
-                String url = RedisAccess.getUrl(file.getName().split("\\.")[0]);
-                Field fieldUrl = new StringField("url", url, Field.Store.YES);
-                String content = FileUtils.readFileToString(file, "UTF-8");
-                Field fieldContent = new TextField("content", content, Field.Store.YES);
-                Field fieldTitle = new TextField("title", content.split("(\r\n)|(\n)")[0], Field.Store.YES);
+                try {
+                    String url = RedisAccess.getUrl(file.getName().split("\\.")[0]);
+                    Field fieldUrl = new StringField("url", url, Field.Store.YES);
+                    String content = FileUtils.readFileToString(file, "UTF-8");
+                    Field fieldContent = new TextField("content", content, Field.Store.YES);
+                    Field fieldTitle = new TextField("title", content.split("(\r\n)|(\n)")[0], Field.Store.YES);
 
-                Document doc = new Document();
-                doc.add(fieldUrl);
-                doc.add(fieldContent);
-                doc.add(fieldTitle);
-                docs.add(doc);
+                    Document doc = new Document();
+                    doc.add(fieldUrl);
+                    doc.add(fieldContent);
+                    doc.add(fieldTitle);
+                    docs.add(doc);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
         return docs;

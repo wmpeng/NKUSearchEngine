@@ -11,6 +11,7 @@ import urllib.request
 from urllib.request import OpenerDirector
 from http.client import HTTPResponse
 from urllib.parse import quote
+import socket
 
 from bs4 import BeautifulSoup
 import selenium
@@ -220,7 +221,7 @@ class Spider:
 
         try:
             self.process_one_url(url)
-        except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError) as e:
+        except (urllib.error.HTTPError, urllib.error.URLError, ConnectionResetError, socket.timeout) as e:
             MyRedisUtil.set_known_exception(url, e)
             MyRedisUtil.exceptional_visit(url)
             print("[exception]", type(e), e, file=self.log_file)
@@ -263,7 +264,7 @@ class Spider:
 
     @classmethod
     def auto(cls):
-        if MyRedisUtil.get_all_urls():  # not empty
+        if MyRedisUtil.need_search_num() > 0 :  # not empty
             cls.resume_batch()
         else:  # empty
             cls.new_batch()

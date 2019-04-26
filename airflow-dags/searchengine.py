@@ -96,7 +96,7 @@ def index_fn(ds, **kwargs):
         print("[*] Not skip.")
         os.system(
             "cd /root/repostories/NKUSearchEngine/search-engine/target && "
-            "java -jar search-engine-0.1-jar-with-dependencies.jar prod index"
+            "java -jar -Xmx4096m search-engine-0.1-jar-with-dependencies.jar prod index"
         )
         print("[*] Task Index finished.")
     else:

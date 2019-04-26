@@ -246,3 +246,9 @@ airflow test dag_id task_id datetime
 ```bash
 airflow test se_test index 20190421T15:00
 ```
+
+## QA
+
+* 不能开启后台服务
+
+> 先检查时候已经运行了后台进程，如果没有那就去`airflow_home`目录下删除对应的`.pid`文件
