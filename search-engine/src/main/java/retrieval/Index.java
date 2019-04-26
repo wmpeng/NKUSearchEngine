@@ -30,7 +30,7 @@ public class Index {
     private static String docFolder = (String) Util.getConfig("path.document");
     private static String indexFolder = (String) Util.getConfig("path.index");
 
-    private static List<Document> readDocuments() throws IOException {
+    protected static List<Document> readDocuments() throws IOException {
         List<Document> docs = new ArrayList<>();
         File folder = new File(docFolder);
         assert folder.isDirectory();
@@ -40,17 +40,25 @@ public class Index {
         for (File file : files)
             if (file.isFile()) {
                 try {
-                    String url = RedisAccess.getUrl(file.getName().split("\\.")[0]);
-                    Field fieldUrl = new StringField("url", url, Field.Store.YES);
-                    String content = FileUtils.readFileToString(file, "UTF-8");
-                    Field fieldContent = new TextField("content", content, Field.Store.YES);
-                    Field fieldTitle = new TextField("title", content.split("(\r\n)|(\n)")[0], Field.Store.YES);
+                    String md5 = file.getName().split("\\.")[0];
+                    if(md5=="a0c5e59106372739e1882a339189d511") {
+                        System.out.println("a0c5e59106372739e1882a339189d511");
+                        System.out.println(RedisAccess.needIndex(md5));
+                        System.out.println(RedisAccess.needIndexSetFalse(md5));
+                    }
+                    if (RedisAccess.needIndex(md5) && RedisAccess.needIndexSetFalse(md5)) {
+                        String url = RedisAccess.getUrl(md5);
+                        Field fieldUrl = new StringField("url", url, Field.Store.YES);
+                        String content = FileUtils.readFileToString(file, "UTF-8");
+                        Field fieldContent = new TextField("content", content, Field.Store.YES);
+                        Field fieldTitle = new TextField("title", content.split("(\r\n)|(\n)")[0], Field.Store.YES);
 
-                    Document doc = new Document();
-                    doc.add(fieldUrl);
-                    doc.add(fieldContent);
-                    doc.add(fieldTitle);
-                    docs.add(doc);
+                        Document doc = new Document();
+                        doc.add(fieldUrl);
+                        doc.add(fieldContent);
+                        doc.add(fieldTitle);
+                        docs.add(doc);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -61,6 +69,7 @@ public class Index {
 
     private static void _createIndex() throws IOException {
         List<Document> docs = readDocuments();
+        System.out.println("Built index for " + docs.size() + " documents.");
 
         Directory directory = FSDirectory.open(FileSystems.getDefault().getPath(indexFolder));
 //        Analyzer analyzer = new StandardAnalyzer();
@@ -74,7 +83,7 @@ public class Index {
         config.setAppendCJKPinyin(true);
 
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
-        indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+        indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
         IndexWriter indexWriter = new IndexWriter(directory, indexWriterConfig);
 
         for (Document document : docs)
@@ -85,7 +94,7 @@ public class Index {
     }
 
     public static boolean createIndex() {
-        try{
+        try {
             _createIndex();
         } catch (IOException e) {
             e.printStackTrace();

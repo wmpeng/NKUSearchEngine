@@ -146,6 +146,10 @@ class MyRedisUtil:
         cls.set_interval(md5, interval)
         cls.set_next_time(md5, ts + interval)
         cls.set_last_time(md5, ts)
+    
+    @classmethod
+    def set_need_index(cls, md5: str):
+        cls.accessor.set_push("need_index", md5)
 
     @classmethod
     def have_visited(cls, url: str):
@@ -163,6 +167,7 @@ class MyRedisUtil:
         interval = cls.get_interval(md5)
         interval = max(cls._min_interval, interval / 2)
         cls.set_visit_info(md5, interval)
+        cls.set_need_index(md5)
 
     @classmethod
     def unchanged_visit(cls, url: str):
@@ -180,6 +185,7 @@ class MyRedisUtil:
 
         interval = cls._default_interval
         cls.set_visit_info(md5, interval)
+        cls.set_need_index(md5)
 
     @classmethod
     def exceptional_visit(cls, url: str):

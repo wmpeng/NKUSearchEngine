@@ -10,14 +10,14 @@ from airflow.operators.python_operator import PythonOperator
 default_args = {
     'owner': 'wmpeng',
     'depends_on_past': False,
-    'start_date': datetime(2019, 4, 20),
+    'start_date': datetime(2019, 4, 25),
     'retries': 1,
     'retry_delay': timedelta(minutes=10)
 }
 
 dag = DAG('se_test',
           default_args=default_args,
-          schedule_interval=timedelta(hours=1),
+          schedule_interval=timedelta(days=1),
           max_active_runs=1)
 
 
@@ -36,6 +36,21 @@ def print_fn(ds, **kwargs):
     else:
         print("[*] Skip.")
 
+def gitpull_fn(ds, **kwargs):
+    now = pendulum.now()
+    next_trigger = kwargs["next_execution_date"] + dag.schedule_interval
+    print("now", now)
+    print("next_trigger", next_trigger)
+    if now < next_trigger:
+        print("[*] Not skip.")
+        os.system(
+            "cd /root/repostories/NKUSearchEngine && "
+            "git checkout product && "
+            "git pull")
+        print("[*] Task GitPull finished.")
+    else:
+        print("[*] Skip.")
+
 
 def spider_fn(ds, **kwargs):
     now = pendulum.now()
@@ -47,7 +62,7 @@ def spider_fn(ds, **kwargs):
         os.system(
             "cd /root/repostories/NKUSearchEngine/spider && "
             "activate base && "
-            "python spider.py new_batch 10")
+            "python spider.py auto 10000")
         print("[*] Task Spider finished.")
     else:
         print("[*] Skip.")
@@ -81,7 +96,7 @@ def index_fn(ds, **kwargs):
         print("[*] Not skip.")
         os.system(
             "cd /root/repostories/NKUSearchEngine/search-engine/target && "
-            "java -jar search-engine-0.1-jar-with-dependencies.jar prod index"
+            "java -jar -Xmx4096m search-engine-0.1-jar-with-dependencies.jar prod index"
         )
         print("[*] Task Index finished.")
     else:
@@ -92,6 +107,13 @@ task_print = PythonOperator(
     task_id='print',
     provide_context=True,
     python_callable=print_fn,
+    dag=dag
+)
+
+task_gitpull = PythonOperator(
+    task_id='gitpull',
+    provide_context=True,
+    python_callable=gitpull_fn,
     dag=dag
 )
 
@@ -116,7 +138,8 @@ task_index = PythonOperator(
     dag=dag
 )
 
-task_spider.set_upstream(task_print)
-task_build.set_upstream(task_print)
+task_gitpull.set_upstream(task_print)
+task_spider.set_upstream(task_gitpull)
+task_build.set_upstream(task_gitpull)
 task_index.set_upstream(task_build)
 task_index.set_upstream(task_spider)

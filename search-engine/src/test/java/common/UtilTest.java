@@ -11,4 +11,9 @@ public class UtilTest extends TestCase {
         Util.setEnv("prod");
         System.out.println(Util.getConfig("redis.host"));
     }
+
+    public void testMd5() {
+        Util.setEnv("prod");
+        System.out.println(Util.md5((String)Util.getConfig("job.start_url")));
+    }
 }

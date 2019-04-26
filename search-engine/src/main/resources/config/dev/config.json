@@ -9,5 +9,7 @@
     "search.snippet_length": 128,
 
     "search_server.host": "localhost",
-    "search_server.port": 8888
+    "search_server.port": 8888,
+
+    "job.start_url": "http://www.nankai.edu.cn"
 }
