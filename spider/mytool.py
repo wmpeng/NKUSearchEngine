@@ -76,7 +76,7 @@ class MyUtil:
         return ret
 
     @staticmethod
-    def diff_ratio(str1: str, str2: str) -> float:
+    def same_ratio(str1: str, str2: str) -> float:
         return difflib.SequenceMatcher(None, str1, str2).ratio()
 
     @staticmethod
