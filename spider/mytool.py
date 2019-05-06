@@ -5,6 +5,7 @@ import os
 import time
 from typing import Dict, Any
 import difflib
+import re
 
 
 class Config:
@@ -76,7 +77,9 @@ class MyUtil:
         return ret
 
     @staticmethod
-    def diff_ratio(str1: str, str2: str) -> float:
+    def same_ratio(str1: str, str2: str) -> float:
+        str1 = re.sub(r"[0-9]", "", str1)
+        str2 = re.sub(r"[0-9]", "", str2)
         return difflib.SequenceMatcher(None, str1, str2).ratio()
 
     @staticmethod

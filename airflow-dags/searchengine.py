@@ -138,8 +138,15 @@ task_index = PythonOperator(
     dag=dag
 )
 
+task_airflow_webserver = BashOperator(
+    task_id='airflow_webserver', 
+    bash_command='airflow webserver -D', 
+    dag=dag
+)
+
 task_gitpull.set_upstream(task_print)
 task_spider.set_upstream(task_gitpull)
 task_build.set_upstream(task_gitpull)
 task_index.set_upstream(task_build)
 task_index.set_upstream(task_spider)
+task_airflow_webserver.set_upstream(task_index)

@@ -131,8 +131,8 @@ class Spider:
             self.write_doc(parser.text, doc_path)
         else:
             old_text = MyUtil.read_str(doc_path)
-            diff_ratio = MyUtil.diff_ratio(old_text, parser.text)
-            if diff_ratio > 0.99:
+            same_ratio = MyUtil.same_ratio(old_text, parser.text)
+            if same_ratio > 0.998:
                 MyRedisUtil.unchanged_visit(url)
             else:
                 MyRedisUtil.changed_visit(url)
